@@ -17,14 +17,18 @@ $router->get('/', function () use ($router) {
     return $router->app->version();
 });
 
-$router->group(['prefix' => 'user'], function () use ($router) {
-    $router->get('{id}', 'UserController@view');
-    $router->get('{id}/children', 'UserController@children');
+$router->post('login', 'AuthController@login');
+$router->post('register', 'UserController@add');
+
+$router->group(['prefix' => 'user', 'middleware' => 'auth:api'], function () use ($router) {
+    $router->get('/', 'UserController@view');
+    $router->get('children', 'UserController@children');
+    $router->get('parent', 'UserController@parent');
     $router->post('/', 'UserController@add');
-    $router->put('{id}', 'UserController@edit');
-    $router->put('{id}/pwd', 'UserController@changePassword');
-    $router->put('{id}/resetpwd', 'UserController@resetPassword');
-    $router->put('{id}/tokenpush', 'UserController@tokenPush');
-    $router->post('{id}/photo', 'UserController@photo');
-    $router->delete('{id}', 'UserController@delete');
+    $router->put('/', 'UserController@edit');
+    $router->put('editpwd', 'UserController@changePassword');
+    $router->put('resetpwd', 'UserController@resetPassword');
+    $router->put('tokenpush', 'UserController@tokenPush');
+    $router->post('photo', 'UserController@photo');
+    $router->delete('/', 'UserController@delete');
 });
