@@ -25,5 +25,6 @@ $router->group(['prefix' => 'user'], function () use ($router) {
     $router->put('{id}/pwd', 'UserController@changePassword');
     $router->put('{id}/resetpwd', 'UserController@resetPassword');
     $router->put('{id}/tokenpush', 'UserController@tokenPush');
+    $router->post('{id}/photo', 'UserController@photo');
     $router->delete('{id}', 'UserController@delete');
 });

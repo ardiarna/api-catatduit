@@ -95,6 +95,24 @@ class UserController extends Controller
         return $this->successResponse($user, "Token push notification berhasil disimpan");
     }
 
+    public function photo(Request $req, $id) {
+        if($req->hasFile('foto')) {
+            $user = User::findOrFail($id);
+            $foto = $req->file('foto');
+            if($foto->isValid()) {
+                $namafoto = $id.'_'.$foto->getClientOriginalName();
+                $foto->move(storage_path('images'), $namafoto);
+                $user->foto = $namafoto;
+                $user->save();
+                return $this->successResponse($user, "Foto berhasil disimpan");
+            } else {
+                throw new HttpException(500, "foto gagal diupload");
+            }
+        } else {
+            throw new HttpException(400, "file foto tidak ada");
+        }
+    }
+
     public function delete($id) {
         $user = User::destroy($id);
         if($user == 0) {

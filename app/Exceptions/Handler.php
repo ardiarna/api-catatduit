@@ -7,6 +7,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 use Laravel\Lumen\Exceptions\Handler as ExceptionHandler;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
 
@@ -58,6 +59,10 @@ class Handler extends ExceptionHandler
 
         if($exception instanceof ValidationException) {
             return $this->failRespUnProcess($exception->getMessage());
+        }
+
+        if($exception instanceof FileException) {
+            return $this->failResponse($exception->getMessage(), 500);
         }
 
         if($exception instanceof HttpException) {
