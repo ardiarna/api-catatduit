@@ -37,3 +37,10 @@ $router->group(['prefix' => 'user', 'middleware' => 'auth:api'], function () use
     $router->post('photo', 'UserController@photo');
     $router->delete('/', 'UserController@delete');
 });
+
+$router->group(['prefix' => 'adjust', 'middleware' => 'auth:api'], function () use ($router) {
+    $router->get('/', 'AdjustController@views');
+    $router->get('{id}', 'AdjustController@view');
+    $router->post('/', 'AdjustController@add');
+
+});
