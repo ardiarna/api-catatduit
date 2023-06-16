@@ -29,4 +29,19 @@ class AuthController extends Controller
         ]);
     }
 
+    public function logout() {
+        Auth::logout();
+        return $this->successResponse(null, "logout berhasil");
+    }
+
+    public function refresh() {
+        $token = Auth::refresh();
+        return $this->successResponse([
+            'user' => Auth::user(),
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => Auth::factory()->getTTL()
+        ]);
+    }
+
 }
