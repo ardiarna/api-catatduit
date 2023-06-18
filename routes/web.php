@@ -42,5 +42,12 @@ $router->group(['prefix' => 'adjust', 'middleware' => 'auth:api'], function () u
     $router->get('/', 'AdjustController@findAll');
     $router->get('{id}', 'AdjustController@findById');
     $router->post('/', 'AdjustController@create');
+});
 
+$router->group(['prefix' => 'bank', 'middleware' => 'auth:api'], function () use ($router) {
+    $router->get('/', 'BankController@findAll');
+    $router->get('{id}', 'BankController@findById');
+    $router->post('/', 'BankController@create');
+    $router->put('{id}', 'BankController@update');
+    $router->delete('{id}', 'BankController@delete');
 });

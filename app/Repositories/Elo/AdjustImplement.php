@@ -23,7 +23,7 @@ class AdjustImplement implements AdjustRepository {
         $tgl_akhir = $inputs['tgl_akhir'];
         $iskeluar = $inputs['iskeluar'];
         $rekening_id = $inputs['rekening_id'];
-        $models = Adjust::where('parent_id', $parent_id)
+        $models = $this->model->where('parent_id', $parent_id)
             ->where('tanggal', '>=', $tgl_awal)
             ->where('tanggal', '<=', $tgl_akhir);
         if($iskeluar) {
