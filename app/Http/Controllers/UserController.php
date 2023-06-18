@@ -13,19 +13,21 @@ class UserController extends Controller
 {
     use ApiResponser;
 
-    protected $user, $userId, $parentId, $repo;
+    protected $user, $userId, $repo;
 
     public function __construct(UserRepository $repo) {
         $this->user = Auth::user();
         if($this->user != null) {
             $this->userId = $this->user->id;
-            $this->parentId = $this->user->parent_id != '0' ? $this->user->parent_id : $this->user->id;
         }
         $this->repo = $repo;
     }
 
     public function view() {
-        return $this->successResponse($this->user);
+        $data = $this->user;
+        $data->parent;
+        $data->children;
+        return $this->successResponse($data);
     }
 
     public function children() {
@@ -34,7 +36,7 @@ class UserController extends Controller
     }
 
     public function parent() {
-        $data = $this->repo->parent($this->parentId);
+        $data = $this->repo->parent($this->user->parent_id);
         return $this->successResponse($data);
     }
 
