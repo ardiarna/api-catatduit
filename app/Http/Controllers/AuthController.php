@@ -21,12 +21,7 @@ class AuthController extends Controller
         if(! $token = Auth::attempt($credentials)) {
             throw new HttpException(401, "email atau password yang anda masukan salah");
         }
-        return $this->successResponse([
-            'user' => Auth::user(),
-            'access_token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => Auth::factory()->getTTL()
-        ]);
+        return $this->sendRespon($token);
     }
 
     public function logout() {
@@ -36,6 +31,10 @@ class AuthController extends Controller
 
     public function refresh() {
         $token = Auth::refresh();
+        return $this->sendRespon($token);
+    }
+
+    protected function sendRespon($token) {
         return $this->successResponse([
             'user' => Auth::user(),
             'access_token' => $token,

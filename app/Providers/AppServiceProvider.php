@@ -13,6 +13,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->app->bind('App\Repositories\AdjustRepository', 'App\Repositories\Elo\AdjustImplement');
+        $this->app->bind('App\Repositories\UserRepository', 'App\Repositories\Elo\UserImplement');
     }
 }

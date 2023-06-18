@@ -18,7 +18,8 @@ $router->get('/', function () use ($router) {
 });
 
 $router->post('login', 'AuthController@login');
-$router->post('register', 'UserController@add');
+$router->post('register', 'UserController@create');
+$router->post('resetpwd', 'UserController@resetPassword');
 
 $router->group(['middleware' => 'auth:api'], function () use ($router) {
     $router->get('logout', 'AuthController@logout');
@@ -29,18 +30,17 @@ $router->group(['prefix' => 'user', 'middleware' => 'auth:api'], function () use
     $router->get('/', 'UserController@view');
     $router->get('children', 'UserController@children');
     $router->get('parent', 'UserController@parent');
-    $router->post('/', 'UserController@add');
-    $router->put('/', 'UserController@edit');
-    $router->put('editpwd', 'UserController@changePassword');
-    $router->put('resetpwd', 'UserController@resetPassword');
+    $router->post('/', 'UserController@create');
+    $router->put('/', 'UserController@update');
+    $router->put('editpwd', 'UserController@editPassword');
     $router->put('tokenpush', 'UserController@tokenPush');
     $router->post('photo', 'UserController@photo');
     $router->delete('/', 'UserController@delete');
 });
 
 $router->group(['prefix' => 'adjust', 'middleware' => 'auth:api'], function () use ($router) {
-    $router->get('/', 'AdjustController@views');
-    $router->get('{id}', 'AdjustController@view');
-    $router->post('/', 'AdjustController@add');
+    $router->get('/', 'AdjustController@findAll');
+    $router->get('{id}', 'AdjustController@findById');
+    $router->post('/', 'AdjustController@create');
 
 });

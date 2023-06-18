@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Repositories\UserRepository;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,21 +13,32 @@ class UserController extends Controller
 {
     use ApiResponser;
 
+    protected $user, $userId, $parentId, $repo;
+
+    public function __construct(UserRepository $repo) {
+        $this->user = Auth::user();
+        if($this->user != null) {
+            $this->userId = $this->user->id;
+            $this->parentId = $this->user->parent_id != '0' ? $this->user->parent_id : $this->user->id;
+        }
+        $this->repo = $repo;
+    }
+
     public function view() {
-        return $this->successResponse(Auth::user());
+        return $this->successResponse($this->user);
     }
 
     public function children() {
-        $children = User::where('parent_id', Auth::user()->id)->get();
-        return $this->successResponse($children);
+        $data = $this->repo->children($this->userId);
+        return $this->successResponse($data);
     }
 
     public function parent() {
-        $parent = User::where('id', Auth::user()->parent_id)->first();
-        return $this->successResponse($parent);
+        $data = $this->repo->parent($this->parentId);
+        return $this->successResponse($data);
     }
 
-    public function add(Request $req) {
+    public function create(Request $req) {
         $this->validate($req, [
             'email' => 'required|email',
             'password' => 'required|confirmed',
@@ -35,80 +46,76 @@ class UserController extends Controller
             'hp_kode' => 'required',
             'hp_nomor' => 'required',
         ]);
-        $email = $req->input('email');
-        $this->cekExistingEmail($email);
-        $inputs = $req->all();
-        $parent = Auth::user();
-        $inputs['parent_id'] = $parent == null ? '0' : $parent->id;
-        $inputs['password'] = Hash::make($req->input('password'));
-        $user = User::create($inputs);
-        return $this->createdResponse($user, 'Akun berhasil dibuat');
+        $inputs = $req->only(['email', 'password', 'nama', 'hp_kode', 'hp_nomor']);
+        $this->cekExistingEmail($inputs['email']);
+        $inputs['parent_id'] = $this->user == null ? '0' : $this->userId;
+        $inputs['password'] = Hash::make($inputs['password']);
+        $data = $this->repo->create($inputs);
+        return $this->createdResponse($data, 'Akun berhasil dibuat');
     }
 
-    public function edit(Request $req) {
+    public function update(Request $req) {
         $this->validate($req, [
             'email' => 'required|email',
             'nama' => 'required',
             'hp_kode' => 'required',
             'hp_nomor' => 'required',
         ]);
-        $user = User::findOrFail(Auth::user()->id);
-        $email = $req->input('email');
-        if($email != $user->email) {
-            $this->cekExistingEmail($email);
+        $inputs = $req->only(['email', 'nama', 'hp_kode', 'hp_nomor']);
+        if($inputs['email'] != $this->user->email) {
+            $this->cekExistingEmail($inputs['email']);
         }
-        $user->email = $email;
-        $user->nama = $req->input('nama');
-        $user->hp_kode = $req->input('hp_kode');
-        $user->hp_nomor = $req->input('hp_nomor');
-        $user->save();
-        return $this->successResponse($user, "Perubahan akun berhasil disimpan");
+        $data = $this->repo->update($this->userId, $inputs);
+        return $this->successResponse($data, "Perubahan akun berhasil disimpan");
     }
 
-    public function changePassword(Request $req) {
+    public function editPassword(Request $req) {
         $this->validate($req, [
             'old_password' => 'required',
             'password' => 'required|different:old_password|confirmed',
         ]);
-        $user = User::findOrFail(Auth::user()->id);
-        if(!Hash::check($req->input('old_password'), $user->password)) {
+        $inputs = $req->only(['old_password', 'password']);
+        if(!Hash::check($inputs['old_password'], $this->user->password)) {
             throw new HttpException(400, "password lama anda tidak sesuai");
         }
-        $user->password = Hash::make($req->input('password'));
-        $user->save();
-        return $this->successResponse($user, "Password berhasil diubah");
+        $data = $this->repo->editPassword($this->userId, Hash::make($inputs['password']));
+        return $this->successResponse($data, "Password berhasil diubah");
     }
 
     public function resetPassword(Request $req) {
         $this->validate($req, [
+            'id' => 'required',
+            'key' => 'required',
             'password' => 'required|confirmed',
         ]);
-        $user = User::findOrFail(Auth::user()->id);
-        $user->password = Hash::make($req->input('password'));
-        $user->save();
-        return $this->successResponse($user, "Password berhasil direset");
+        $inputs = $req->only(['id', 'key', 'password']);
+        $cekuser = $this->repo->findById($inputs['id']);
+        if($cekuser == null) {
+            throw new HttpException(404, "Akun tidak ditemukan");
+        }
+        if($inputs['key'] != $cekuser->password) {
+            throw new HttpException(400, "autentikasi anda tidak sesuai");
+        }
+        $data = $this->repo->editPassword($inputs['id'], Hash::make($inputs['password']));
+        return $this->successResponse($data, "Password berhasil direset");
     }
 
     public function tokenPush(Request $req) {
         $this->validate($req, [
             'token_push' => 'required',
         ]);
-        $user = User::findOrFail(Auth::user()->id);
-        $user->token_push = $req->input('token_push');
-        $user->save();
-        return $this->successResponse($user, "Token push notification berhasil disimpan");
+        $data = $this->repo->tokenPush($this->userId, $req->input('token_push'));
+        return $this->successResponse($data, "Token push notification berhasil disimpan");
     }
 
     public function photo(Request $req) {
         if($req->hasFile('foto')) {
-            $user = User::findOrFail(Auth::user()->id);
             $foto = $req->file('foto');
             if($foto->isValid()) {
-                $namafoto = $user->id.'_'.$foto->getClientOriginalName();
+                $namafoto = $this->userId.'_'.$foto->getClientOriginalName();
                 $foto->move(storage_path('images'), $namafoto);
-                $user->foto = $namafoto;
-                $user->save();
-                return $this->successResponse($user, "Foto berhasil disimpan");
+                $data = $this->repo->photo($this->userId, $namafoto);
+                return $this->successResponse($data, "Foto berhasil disimpan");
             } else {
                 throw new HttpException(500, "foto gagal diupload");
             }
@@ -118,16 +125,16 @@ class UserController extends Controller
     }
 
     public function delete() {
-        $user = User::destroy(Auth::user()->id);
-        if($user == 0) {
+        $data = $this->repo->delete($this->userId);
+        if($data == 0) {
             throw new HttpException(404, "Akun tidak ditemukan");
         }
-        return $this->successResponse($user, "Akun berhasil dihapus");
+        return $this->successResponse($data, "Akun berhasil dihapus");
     }
 
     public function cekExistingEmail($email) {
-        $cek = User::where('email', $email)->count();
-        if($cek > 0) {
+        $data = $this->repo->findByEmail($email);
+        if($data != null) {
             throw new HttpException(400, "email $email sudah dipakai, silakan menggunakan email yang lain");
         }
     }
