@@ -51,3 +51,12 @@ $router->group(['prefix' => 'bank', 'middleware' => 'auth:api'], function () use
     $router->put('{id}', 'BankController@update');
     $router->delete('{id}', 'BankController@delete');
 });
+
+$router->group(['prefix' => 'rekening', 'middleware' => 'auth:api'], function () use ($router) {
+    $router->get('/', 'RekeningController@findAll');
+    $router->get('{id}', 'RekeningController@findById');
+    $router->post('/', 'RekeningController@create');
+    $router->put('{id}', 'RekeningController@update');
+    $router->put('{id}/adjust', 'RekeningController@adjust');
+    $router->delete('{id}', 'RekeningController@delete');
+});
