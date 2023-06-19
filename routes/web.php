@@ -60,3 +60,11 @@ $router->group(['prefix' => 'rekening', 'middleware' => 'auth:api'], function ()
     $router->put('{id}/adjust', 'RekeningController@adjust');
     $router->delete('{id}', 'RekeningController@delete');
 });
+
+$router->group(['prefix' => 'kategori', 'middleware' => 'auth:api'], function () use ($router) {
+    $router->get('/', 'KategoriController@findAll');
+    $router->get('{id}', 'KategoriController@findById');
+    $router->post('/', 'KategoriController@create');
+    $router->put('{id}', 'KategoriController@update');
+    $router->delete('{id}', 'KategoriController@delete');
+});

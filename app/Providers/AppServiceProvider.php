@@ -15,6 +15,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind('App\Repositories\AdjustRepository', 'App\Repositories\Elo\AdjustImplement');
         $this->app->bind('App\Repositories\BankRepository', 'App\Repositories\Elo\BankImplement');
+        $this->app->bind('App\Repositories\KategoriRepository', 'App\Repositories\Elo\KategoriImplement');
         $this->app->bind('App\Repositories\RekeningRepository', 'App\Repositories\Elo\RekeningImplement');
         $this->app->bind('App\Repositories\UserRepository', 'App\Repositories\Elo\UserImplement');
     }
