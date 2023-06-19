@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Repositories\AdjustRepository;
 use App\Repositories\KategoriRepository;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
@@ -15,7 +14,7 @@ class KategoriController extends Controller
 
     protected $user, $parentId, $repo;
 
-    public function __construct(KategoriRepository $repo, AdjustRepository $adjustRepo) {
+    public function __construct(KategoriRepository $repo) {
         $this->user = Auth::user();
         if($this->user != null) {
             $this->parentId = $this->user->parent_id != '0' ? $this->user->parent_id : $this->user->id;
@@ -33,6 +32,9 @@ class KategoriController extends Controller
     }
 
     public function findAll(Request $req) {
+        $tahun = $req->query('tahun');
+        $bulan = $req->query('bulan');
+
         $datas = $this->repo->findAll([
             'parent_id' => $this->parentId,
             'jenis' => $req->query('jenis'),
@@ -40,6 +42,11 @@ class KategoriController extends Controller
         ]);
         foreach ($datas as $data) {
             $data->rekening;
+        }
+        if($tahun && $bulan) {
+            foreach ($datas as $data) {
+                $data->anggaran = $this->repo->anggaranPeriode($data->id, $tahun, $bulan);
+            }
         }
         return $this->successResponse($datas);
     }
@@ -54,6 +61,7 @@ class KategoriController extends Controller
         $inputs = $req->only(['jenis', 'nama', 'ikon', 'rekening_id']);
         $inputs['parent_id'] = $this->parentId;
         $data = $this->repo->create($inputs);
+        $data->rekening;
         return $this->createdResponse($data, 'Kategori berhasil dibuat');
     }
 
@@ -65,6 +73,7 @@ class KategoriController extends Controller
         ]);
         $inputs = $req->only(['nama', 'ikon', 'rekening_id']);
         $data = $this->repo->update($id, $inputs);
+        $data->rekening;
         return $this->successResponse($data, "Kategori berhasil diubah");
     }
 

@@ -14,6 +14,7 @@ class AppServiceProvider extends ServiceProvider
     public function register()
     {
         $this->app->bind('App\Repositories\AdjustRepository', 'App\Repositories\Elo\AdjustImplement');
+        $this->app->bind('App\Repositories\AnggaranRepository', 'App\Repositories\Elo\AnggaranImplement');
         $this->app->bind('App\Repositories\BankRepository', 'App\Repositories\Elo\BankImplement');
         $this->app->bind('App\Repositories\KategoriRepository', 'App\Repositories\Elo\KategoriImplement');
         $this->app->bind('App\Repositories\RekeningRepository', 'App\Repositories\Elo\RekeningImplement');

@@ -50,4 +50,11 @@ class KategoriImplement implements KategoriRepository {
         return $this->model->destroy($id);
     }
 
+    public function anggaranPeriode($id, $tahun, $bulan) {
+        return $this->model->find($id)->anggarans()
+            ->where('tahun', $tahun)
+            ->where('bulan', $bulan)
+            ->first();
+    }
+
 }

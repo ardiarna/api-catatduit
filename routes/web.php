@@ -68,3 +68,11 @@ $router->group(['prefix' => 'kategori', 'middleware' => 'auth:api'], function ()
     $router->put('{id}', 'KategoriController@update');
     $router->delete('{id}', 'KategoriController@delete');
 });
+
+$router->group(['prefix' => 'anggaran', 'middleware' => 'auth:api'], function () use ($router) {
+    $router->get('/', 'AnggaranController@findAll');
+    $router->get('{id}', 'AnggaranController@findById');
+    $router->post('/', 'AnggaranController@create');
+    $router->put('{id}', 'AnggaranController@update');
+    $router->delete('{id}', 'AnggaranController@delete');
+});

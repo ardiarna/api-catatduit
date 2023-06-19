@@ -2,11 +2,11 @@
 
 namespace App\Repositories;
 
-interface KategoriRepository {
+interface AnggaranRepository {
     public function findById($id);
+    public function findByPeriode($kategori_id, $tahun, $bulan);
     public function findAll(array $inputs);
     public function create(array $inputs);
-    public function update($id, array $inputs);
+    public function update($id, $jumlah);
     public function delete($id);
-    public function anggaranPeriode($id, $tahun, $bulan);
 }
