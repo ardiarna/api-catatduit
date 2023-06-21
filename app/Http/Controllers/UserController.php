@@ -7,6 +7,7 @@ use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class UserController extends Controller
@@ -25,8 +26,10 @@ class UserController extends Controller
 
     public function view() {
         $data = $this->user;
-        $data->parent;
-        $data->children;
+        if($this->user != null) {
+            $data->parent;
+            $data->children;
+        }
         return $this->successResponse($data);
     }
 
@@ -115,7 +118,12 @@ class UserController extends Controller
             $foto = $req->file('foto');
             if($foto->isValid()) {
                 $namafoto = $this->userId.'_'.$foto->getClientOriginalName();
-                $foto->move(storage_path('images'), $namafoto);
+                $foto->move(Storage::path('images'), $namafoto);
+                if($this->user->foto != $namafoto) {
+                    if(Storage::exists('images/'.$this->user->foto)) {
+                        Storage::delete('images/'.$this->user->foto);
+                    }
+                }
                 $data = $this->repo->photo($this->userId, $namafoto);
                 return $this->successResponse($data, "Foto berhasil disimpan");
             } else {
