@@ -84,3 +84,11 @@ $router->group(['prefix' => 'transaksi', 'middleware' => 'auth:api'], function (
     $router->put('{id}', 'TransaksiController@update');
     $router->delete('{id}', 'TransaksiController@delete');
 });
+
+$router->group(['prefix' => 'transfer', 'middleware' => 'auth:api'], function () use ($router) {
+    $router->get('/', 'TransferController@findAll');
+    $router->get('{id}', 'TransferController@findById');
+    $router->post('/', 'TransferController@create');
+    $router->put('{id}', 'TransferController@update');
+    $router->delete('{id}', 'TransferController@delete');
+});
