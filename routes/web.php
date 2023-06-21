@@ -38,12 +38,6 @@ $router->group(['prefix' => 'user', 'middleware' => 'auth:api'], function () use
     $router->delete('/', 'UserController@delete');
 });
 
-$router->group(['prefix' => 'adjust', 'middleware' => 'auth:api'], function () use ($router) {
-    $router->get('/', 'AdjustController@findAll');
-    $router->get('{id}', 'AdjustController@findById');
-    $router->post('/', 'AdjustController@create');
-});
-
 $router->group(['prefix' => 'bank', 'middleware' => 'auth:api'], function () use ($router) {
     $router->get('/', 'BankController@findAll');
     $router->get('{id}', 'BankController@findById');
@@ -61,6 +55,12 @@ $router->group(['prefix' => 'rekening', 'middleware' => 'auth:api'], function ()
     $router->delete('{id}', 'RekeningController@delete');
 });
 
+$router->group(['prefix' => 'adjust', 'middleware' => 'auth:api'], function () use ($router) {
+    $router->get('/', 'AdjustController@findAll');
+    $router->get('{id}', 'AdjustController@findById');
+    $router->post('/', 'AdjustController@create');
+});
+
 $router->group(['prefix' => 'kategori', 'middleware' => 'auth:api'], function () use ($router) {
     $router->get('/', 'KategoriController@findAll');
     $router->get('{id}', 'KategoriController@findById');
@@ -75,4 +75,12 @@ $router->group(['prefix' => 'anggaran', 'middleware' => 'auth:api'], function ()
     $router->post('/', 'AnggaranController@create');
     $router->put('{id}', 'AnggaranController@update');
     $router->delete('{id}', 'AnggaranController@delete');
+});
+
+$router->group(['prefix' => 'transaksi', 'middleware' => 'auth:api'], function () use ($router) {
+    $router->get('/', 'TransaksiController@findAll');
+    $router->get('{id}', 'TransaksiController@findById');
+    $router->post('/', 'TransaksiController@create');
+    $router->put('{id}', 'TransaksiController@update');
+    $router->delete('{id}', 'TransaksiController@delete');
 });

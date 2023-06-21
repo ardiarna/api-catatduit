@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Repositories\AnggaranRepository;
+use App\Repositories\KategoriRepository;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class AnggaranController extends Controller
 {
@@ -25,9 +25,8 @@ class AnggaranController extends Controller
     public function findById($id) {
         $data = $this->repo->findById($id);
         if($data == null) {
-            throw new HttpException(404, "Anggaran tidak ditemukan");
+            return $this->failRespNotFound('Anggaran tidak ditemukan');
         }
-        $data->kategori;
         return $this->successResponse($data);
     }
 
@@ -38,13 +37,10 @@ class AnggaranController extends Controller
             'bulan' => $req->query('bulan'),
             'kategori_id' => $req->query('kategori_id'),
         ]);
-        foreach ($datas as $data) {
-            $data->kategori;
-        }
         return $this->successResponse($datas);
     }
 
-    public function create(Request $req) {
+    public function create(Request $req, KategoriRepository $kategoriRepo) {
         $this->validate($req, [
             'tahun' => 'required',
             'bulan' => 'required',
@@ -53,8 +49,14 @@ class AnggaranController extends Controller
         ]);
         $inputs = $req->only(['tahun', 'bulan', 'kategori_id', 'jumlah']);
         $inputs['parent_id'] = $this->parentId;
+        $kategori = $kategoriRepo->findById($inputs['kategori_id']);
+        if($kategori == null) {
+            return $this->failRespNotFound('Kategori tidak ditemukan');
+        }
+        if($kategori->jenis != 'K') {
+            return $this->failRespBadReq('Kategori harus jenis pengeluaran');
+        }
         $data = $this->repo->create($inputs);
-        $data->kategori;
         return $this->createdResponse($data, 'Anggaran berhasil dibuat');
     }
 
@@ -64,16 +66,15 @@ class AnggaranController extends Controller
         ]);
         $jumlah = $req->input('jumlah');
         $data = $this->repo->update($id, $jumlah);
-        $data->kategori;
-        return $this->successResponse($data, "Anggaran berhasil diubah");
+        return $this->successResponse($data, 'Anggaran berhasil diubah');
     }
 
     public function delete($id) {
         $data = $this->repo->delete($id);
         if($data == 0) {
-            throw new HttpException(404, "Anggaran tidak ditemukan");
+            return $this->failRespNotFound('Anggaran tidak ditemukan');
         }
-        return $this->successResponse($data, "Anggaran berhasil dihapus");
+        return $this->successResponse($data, 'Anggaran berhasil dihapus');
     }
 
 }

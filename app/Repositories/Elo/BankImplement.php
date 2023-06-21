@@ -18,7 +18,7 @@ class BankImplement implements BankRepository {
     }
 
     public function findAll($inputs = []) {
-        return $this->model->all();
+        return $this->model->orderBy('nama')->get();
     }
 
     public function create(array $inputs) {

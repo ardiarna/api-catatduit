@@ -40,4 +40,8 @@ class AdjustImplement implements AdjustRepository {
         return $this->model->create($inputs);
     }
 
+    public function deleteByRekeningId($rekening_id) {
+        return $this->model->where('rekening_id', $rekening_id)->delete();
+    }
+
 }

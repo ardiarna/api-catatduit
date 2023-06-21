@@ -16,10 +16,9 @@ class AuthController extends Controller
             'email' => 'required|email',
             'password' => 'required',
         ]);
-
         $credentials = $req->only(['email', 'password']);
         if(! $token = Auth::attempt($credentials)) {
-            throw new HttpException(401, "email atau password yang anda masukan salah");
+            throw new HttpException(400, "email atau password yang anda masukan salah");
         }
         return $this->sendRespon($token);
     }
@@ -35,8 +34,11 @@ class AuthController extends Controller
     }
 
     protected function sendRespon($token) {
+        $user = Auth::user();
+        $user->parent;
+        $user->children;
         return $this->successResponse([
-            'user' => Auth::user(),
+            'user' => $user,
             'access_token' => $token,
             'token_type' => 'bearer',
             'expires_in' => Auth::factory()->getTTL()

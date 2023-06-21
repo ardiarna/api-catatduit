@@ -14,15 +14,23 @@ class AnggaranImplement implements AnggaranRepository {
     }
 
     public function findById($id) {
-        return $this->model->find($id);
+        $model = $this->model->find($id);
+        if($model != null) {
+            $model->kategori;
+        }
+        return $model;
     }
 
     public function findByPeriode($kategori_id, $tahun, $bulan) {
-        return $this->model
+        $model = $this->model
             ->where('kategori_id', $kategori_id)
             ->where('tahun', $tahun)
             ->where('bulan', $bulan)
             ->first();
+        if($model != null) {
+            $model->kategori;
+        }
+        return $model;
     }
 
     public function findAll(array $inputs) {
@@ -42,17 +50,23 @@ class AnggaranImplement implements AnggaranRepository {
             $models = $models->where('kategori_id', $kategori_id);
         }
         $models = $models->get();
+        foreach ($models as $model) {
+            $model->kategori;
+        }
         return $models;
     }
 
     public function create(array $inputs) {
-        return $this->model->create($inputs);
+        $model = $this->model->create($inputs);
+        $model->kategori;
+        return $model;
     }
 
     public function update($id, $jumlah) {
         $model = $this->model->findOrFail($id);
         $model->jumlah = $jumlah;
         $model->save();
+        $model->kategori;
         return $model;
     }
 

@@ -7,7 +7,6 @@ use App\Repositories\RekeningRepository;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class RekeningController extends Controller
 {
@@ -27,18 +26,17 @@ class RekeningController extends Controller
     public function findById($id) {
         $data = $this->repo->findById($id);
         if($data == null) {
-            throw new HttpException(404, "Rekening tidak ditemukan");
+            return $this->failRespNotFound('Rekening tidak ditemukan');
         }
-        $data->bank;
-        $data->adjusts;
         return $this->successResponse($data);
     }
 
-    public function findAll() {
-        $datas = $this->repo->findAll(['parent_id' => $this->parentId]);
-        foreach ($datas as $data) {
-            $data->bank;
-        }
+    public function findAll(Request $req) {
+        $datas = $this->repo->findAll([
+            'parent_id' => $this->parentId,
+            'jenis' => $req->query('jenis'),
+            'bank_id' => $req->query('bank_id'),
+        ]);
         return $this->successResponse($datas);
     }
 
@@ -101,8 +99,9 @@ class RekeningController extends Controller
     public function delete($id) {
         $data = $this->repo->delete($id);
         if($data == 0) {
-            throw new HttpException(404, "Rekening tidak ditemukan");
+            return $this->failRespNotFound('Rekening tidak ditemukan');
         }
+        $this->adjustRepo->deleteByRekeningId($id);
         return $this->successResponse($data, "Rekening berhasil dihapus");
     }
 

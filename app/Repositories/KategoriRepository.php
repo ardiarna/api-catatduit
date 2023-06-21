@@ -9,4 +9,5 @@ interface KategoriRepository {
     public function update($id, array $inputs);
     public function delete($id);
     public function anggaranPeriode($id, $tahun, $bulan);
+    public function transaksiPeriode($id, $tahun, $bulan);
 }

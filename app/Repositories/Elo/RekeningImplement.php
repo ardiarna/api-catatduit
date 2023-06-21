@@ -14,17 +14,39 @@ class RekeningImplement implements RekeningRepository {
     }
 
     public function findById($id) {
-        return $this->model->find($id);
+        $model = $this->model->find($id);
+        if($model != null) {
+            $model->bank;
+            // $model->adjusts;
+        }
+        return $model;
     }
 
     public function findAll($inputs) {
         $parent_id = $inputs['parent_id'];
-        $models = $this->model->where('parent_id', $parent_id)->get();
+        $jenis = $inputs['jenis'];
+        $bank_id = $inputs['bank_id'];
+
+        $models = $this->model->where('parent_id', $parent_id);
+        if($jenis) {
+            $models = $models->where('jenis', $jenis);
+        }
+        if($bank_id) {
+            $models = $models->where('bank_id', $bank_id);
+        }
+        $models = $models->orderBy('nama')->get();
+        foreach ($models as $model) {
+            $model->bank;
+            // $model->adjusts;
+        }
         return $models;
     }
 
     public function create(array $inputs) {
-        return $this->model->create($inputs);
+        $model = $this->model->create($inputs);
+        $model->bank;
+        // $model->adjusts;
+        return $model;
     }
 
     public function update($id, array $inputs) {
@@ -35,6 +57,8 @@ class RekeningImplement implements RekeningRepository {
         $model->saldo_endap = $inputs['saldo_endap'];
         $model->keterangan = $inputs['keterangan'];
         $model->save();
+        $model->bank;
+        // $model->adjusts;
         return $model;
     }
 
@@ -42,6 +66,8 @@ class RekeningImplement implements RekeningRepository {
         $model = $this->model->findOrFail($id);
         $model->saldo = $saldo;
         $model->save();
+        $model->bank;
+        // $model->adjusts;
         return $model;
     }
 

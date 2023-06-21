@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Repositories\BankRepository;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class BankController extends Controller
 {
@@ -42,15 +41,15 @@ class BankController extends Controller
         ]);
         $inputs = $req->only(['nama']);
         $data = $this->repo->update($id, $inputs);
-        return $this->successResponse($data, "Bank berhasil diubah");
+        return $this->successResponse($data, 'Bank berhasil diubah');
     }
 
     public function delete($id) {
         $data = $this->repo->delete($id);
         if($data == 0) {
-            throw new HttpException(404, "Bank tidak ditemukan");
+            return $this->failRespNotFound('Bank tidak ditemukan');
         }
-        return $this->successResponse($data, "Bank berhasil dihapus");
+        return $this->successResponse($data, 'Bank berhasil dihapus');
     }
 
 }

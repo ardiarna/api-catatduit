@@ -2,9 +2,10 @@
 
 namespace App\Repositories;
 
-interface AdjustRepository {
+interface TransaksiRepository {
     public function findById($id);
     public function findAll(array $inputs);
     public function create(array $inputs);
-    public function deleteByRekeningId($rekening_id);
+    public function update($id, array $inputs);
+    public function delete($id);
 }
