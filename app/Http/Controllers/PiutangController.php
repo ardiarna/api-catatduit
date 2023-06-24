@@ -182,7 +182,7 @@ class PiutangController extends Controller
         if($piutangDetilBefore->isbayar == 'Y') {
             $sisa_piutang = ($piutang->jumlah - $piutang->bayar) + $piutangDetilBefore->jumlah;
             if($jumlah > $sisa_piutang) {
-                return $this->failRespUnProcess("Jumlah bayar tidak boleh lebih dari sisa piutang [Rp. ".number_format($sisa_piutang)."]");
+                return $this->failRespUnProcess("Jumlah bayar tidak boleh melebihi sisa piutang [Rp. ".number_format($sisa_piutang)."]");
             }
             $sisa_saldo = $rekening->id == $piutangDetilBefore->rekening_id
                 ? ($rekening->saldo - $piutangDetilBefore->jumlah) + $jumlah
@@ -204,7 +204,7 @@ class PiutangController extends Controller
                 ? ($rekening->saldo + $piutangDetilBefore->jumlah) - $jumlah
                 : $rekening->saldo - $jumlah;
             if($sisa_saldo < 0 ) {
-                return $this->failRespUnProcess("Saldo $rekening->nama tidak cukup [sisa saldo : Rp. ".number_format($rekening->saldo)."] Jumlah yang bisa diinput maksimal Rp. ".number_format(($sisa_saldo+$jumlah)));
+                return $this->failRespUnProcess("Tidak bisa diubah, saldo $rekening->nama akan menjadi minus. Jumlah yang bisa diinput maksimal Rp. ".number_format(($sisa_saldo+$jumlah)));
             }
             if($rekening->id != $piutangDetilBefore->rekening_id) {
                 $rekeningBefore = $rekeningRepo->findById($piutangDetilBefore->rekening_id);
@@ -238,7 +238,7 @@ class PiutangController extends Controller
         if($piutang != null) {
             if($piutangDetilBefore->isbayar == 'N') {
                 if(($piutang->jumlah - $piutangDetilBefore->jumlah) < $piutang->bayar) {
-                    return $this->failRespUnProcess("Tidak bisa dihapus, jumlah piutang akan lebih kecil dari jumlah bayar");
+                    return $this->failRespUnProcess("Tidak bisa dihapus, jumlah piutang akan lebih kecil dari jumlah bayar.");
                 }
             }
         }
@@ -247,7 +247,7 @@ class PiutangController extends Controller
             if($piutangDetilBefore->isbayar == 'Y') {
                 $sisa_saldo = $rekening->saldo - $piutangDetilBefore->jumlah;
                 if($sisa_saldo < 0 ) {
-                    return $this->failRespUnProcess("Tidak bisa dihapus, saldo $rekening->nama akan menjadi minus");
+                    return $this->failRespUnProcess("Tidak bisa dihapus, saldo $rekening->nama akan menjadi minus.");
                 }
             } else {
                 $sisa_saldo = $rekening->saldo + $piutangDetilBefore->jumlah;
@@ -255,7 +255,7 @@ class PiutangController extends Controller
         }
         $data = $this->repoDetil->delete($id);
         if($data == 0) {
-            return $this->failRespNotFound('Detil piutangtidak ditemukan');
+            return $this->failRespNotFound('Detil piutang tidak ditemukan');
         }
         if($piutang != null) {
             if($piutangDetilBefore->isbayar == 'Y') {

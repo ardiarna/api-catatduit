@@ -104,3 +104,15 @@ $router->group(['prefix' => 'piutang', 'middleware' => 'auth:api'], function () 
     $router->delete('{id}', 'PiutangController@delete');
     $router->delete('{id}/detil', 'PiutangController@deleteDetil');
 });
+
+$router->group(['prefix' => 'pinjaman', 'middleware' => 'auth:api'], function () use ($router) {
+    $router->get('/', 'PinjamanController@findAll');
+    $router->get('{id}', 'PinjamanController@findById');
+    $router->get('{id}/detil', 'PinjamanController@findDetilById');
+    $router->post('/', 'PinjamanController@create');
+    $router->post('{id}', 'PinjamanController@createDetil');
+    $router->put('{id}', 'PinjamanController@update');
+    $router->put('{id}/detil', 'PinjamanController@updateDetil');
+    $router->delete('{id}', 'PinjamanController@delete');
+    $router->delete('{id}/detil', 'PinjamanController@deleteDetil');
+});

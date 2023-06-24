@@ -70,10 +70,10 @@ class TransaksiController extends Controller
         if($rekening == null) {
             return $this->failRespNotFound('Rekening tidak ditemukan');
         }
-        $jumlah_transaksi = intval($inputs['jumlah']);
+        $jumlah = intval($inputs['jumlah']);
         $sisa_saldo = 0;
         if($inputs['iskeluar'] == 'Y') {
-            $sisa_saldo = $rekening->saldo - $jumlah_transaksi;
+            $sisa_saldo = $rekening->saldo - $jumlah;
             if($sisa_saldo < 0 ) {
                 return $this->failRespUnProcess("Saldo $rekening->nama tidak cukup [sisa saldo : Rp. ".number_format($rekening->saldo)."]");
             }
@@ -85,12 +85,12 @@ class TransaksiController extends Controller
                 return $this->failRespUnProcess("Anggaran $kategori->nama untuk periode $this->afMonthLabel $this->afYear masih 0");
             }
             $total_transaksi_before = $kategoriRepo->transaksiPeriode($kategori->id, $this->afYear, $this->afMonth);
-            $total_transaksi = $total_transaksi_before + $jumlah_transaksi;
+            $total_transaksi = $total_transaksi_before + $jumlah;
             if($anggaran->jumlah < $total_transaksi) {
-                return $this->failRespUnProcess("Transaksi melebihi anggaran $kategori->nama untuk periode $this->afMonthLabel $this->afYear [anggaran : Rp. ".number_format($anggaran->jumlah)." , total transaksi sebelumnya : Rp. ".number_format($total_transaksi_before)." , transaksi sekarang : Rp. ".number_format($jumlah_transaksi)."]");
+                return $this->failRespUnProcess("Transaksi melebihi anggaran $kategori->nama untuk periode $this->afMonthLabel $this->afYear [anggaran : Rp. ".number_format($anggaran->jumlah)." , total transaksi sebelumnya : Rp. ".number_format($total_transaksi_before)." , transaksi sekarang : Rp. ".number_format($jumlah)."]");
             }
         } else {
-            $sisa_saldo = $rekening->saldo + $jumlah_transaksi;
+            $sisa_saldo = $rekening->saldo + $jumlah;
         }
         $transaksi = $this->repo->create($inputs);
         $rekeningRepo->editSaldo($transaksi->rekening_id, $sisa_saldo);
@@ -133,7 +133,7 @@ class TransaksiController extends Controller
                 ? ($rekening->saldo + $transaksiBefore->jumlah) - $jumlah_transaksi
                 : $rekening->saldo - $jumlah_transaksi;
             if($sisa_saldo < 0 ) {
-                return $this->failRespUnProcess("Saldo $rekening->nama tidak cukup [sisa saldo : Rp. ".number_format($rekening->saldo)."] Jumlah transaksi yang bisa diinput maksimal Rp. ".number_format(($sisa_saldo+$jumlah_transaksi)));
+                return $this->failRespUnProcess("Tidak bisa diubah, saldo $rekening->nama akan menjadi minus. Jumlah yang bisa diinput maksimal Rp. ".number_format(($sisa_saldo+$jumlah_transaksi)));
             }
             $anggaran = $kategoriRepo->anggaranPeriode($kategori->id, $this->afYear, $this->afMonth);
             if($anggaran == null) {
@@ -160,14 +160,14 @@ class TransaksiController extends Controller
                 ? ($rekening->saldo - $transaksiBefore->jumlah) + $jumlah_transaksi
                 : $rekening->saldo + $jumlah_transaksi;
             if($sisa_saldo < 0 ) {
-                return $this->failRespUnProcess("Tidak bisa diubah saldo $rekening->nama akan menjadi minus. Jumlah yang bisa diinput minimal Rp. ".number_format(($transaksiBefore->jumlah-$rekening->saldo)));
+                return $this->failRespUnProcess("Tidak bisa diubah, saldo $rekening->nama akan menjadi minus. Jumlah yang bisa diinput minimal Rp. ".number_format(($transaksiBefore->jumlah-$rekening->saldo)));
             }
             if($rekening->id != $transaksiBefore->rekening_id) {
                 $rekeningBefore = $rekeningRepo->findById($transaksiBefore->rekening_id);
                 if($rekeningBefore != null) {
                     $sisa_saldoBefore = $rekeningBefore->saldo - $transaksiBefore->jumlah;
                     if(($sisa_saldoBefore) < 0) {
-                        return $this->failRespUnProcess("Tidak bisa diubah saldo $rekeningBefore->nama akan menjadi minus");
+                        return $this->failRespUnProcess("Tidak bisa diubah, saldo $rekeningBefore->nama akan menjadi minus.");
                     }
                 }
             }
