@@ -92,3 +92,15 @@ $router->group(['prefix' => 'transfer', 'middleware' => 'auth:api'], function ()
     $router->put('{id}', 'TransferController@update');
     $router->delete('{id}', 'TransferController@delete');
 });
+
+$router->group(['prefix' => 'piutang', 'middleware' => 'auth:api'], function () use ($router) {
+    $router->get('/', 'PiutangController@findAll');
+    $router->get('{id}', 'PiutangController@findById');
+    $router->get('{id}/detil', 'PiutangController@findDetilById');
+    $router->post('/', 'PiutangController@create');
+    $router->post('{id}', 'PiutangController@createDetil');
+    $router->put('{id}', 'PiutangController@update');
+    $router->put('{id}/detil', 'PiutangController@updateDetil');
+    $router->delete('{id}', 'PiutangController@delete');
+    $router->delete('{id}/detil', 'PiutangController@deleteDetil');
+});

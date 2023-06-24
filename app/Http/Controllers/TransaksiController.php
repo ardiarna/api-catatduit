@@ -160,7 +160,7 @@ class TransaksiController extends Controller
                 ? ($rekening->saldo - $transaksiBefore->jumlah) + $jumlah_transaksi
                 : $rekening->saldo + $jumlah_transaksi;
             if($sisa_saldo < 0 ) {
-                return $this->failRespUnProcess("Tidak bisa diubah saldo $rekening->nama akan menjadi minus");
+                return $this->failRespUnProcess("Tidak bisa diubah saldo $rekening->nama akan menjadi minus. Jumlah yang bisa diinput minimal Rp. ".number_format(($transaksiBefore->jumlah-$rekening->saldo)));
             }
             if($rekening->id != $transaksiBefore->rekening_id) {
                 $rekeningBefore = $rekeningRepo->findById($transaksiBefore->rekening_id);

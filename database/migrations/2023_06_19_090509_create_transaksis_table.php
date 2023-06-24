@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('nama', 2048);
             $table->timestamp('tanggal')->nullable();
             $table->enum('iskeluar', ['Y', 'N']);
-            $table->integer('jumlah');
+            $table->integer('jumlah', false, true);
             $table->foreignId('kategori_id');
             $table->foreignId('rekening_id');
             $table->foreignId('parent_id');

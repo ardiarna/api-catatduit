@@ -17,6 +17,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind('App\Repositories\AnggaranRepository', 'App\Repositories\Elo\AnggaranImplement');
         $this->app->bind('App\Repositories\BankRepository', 'App\Repositories\Elo\BankImplement');
         $this->app->bind('App\Repositories\KategoriRepository', 'App\Repositories\Elo\KategoriImplement');
+        $this->app->bind('App\Repositories\PiutangRepository', 'App\Repositories\Elo\PiutangImplement');
+        $this->app->bind('App\Repositories\PiutangDetilRepository', 'App\Repositories\Elo\PiutangDetilImplement');
         $this->app->bind('App\Repositories\RekeningRepository', 'App\Repositories\Elo\RekeningImplement');
         $this->app->bind('App\Repositories\TransaksiRepository', 'App\Repositories\Elo\TransaksiImplement');
         $this->app->bind('App\Repositories\TransferRepository', 'App\Repositories\Elo\TransferImplement');
