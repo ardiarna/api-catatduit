@@ -37,7 +37,7 @@ class AuthController extends Controller
         $user = Auth::user();
         $user->parent;
         $user->children;
-        $user->foto = config('image.user').$user->foto;
+        $user->foto = $this->aprUrlFile($user->foto, config('image.user'));
         return $this->successResponse([
             'user' => $user,
             'access_token' => $token,
