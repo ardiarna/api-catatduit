@@ -26,7 +26,7 @@ class UserController extends Controller
 
     public function view() {
         $data = $this->user;
-        $data->foto = config('image.user').$data->foto;
+        $data->foto = $this->aprUrlFile($data->foto, config('image.user'));
         if($this->user != null) {
             $data->parent;
             $data->children;
@@ -72,6 +72,7 @@ class UserController extends Controller
             $this->cekExistingEmail($inputs['email']);
         }
         $data = $this->repo->update($this->userId, $inputs);
+        $data->foto = $this->aprUrlFile($data->foto, config('image.user'));
         return $this->successResponse($data, "Perubahan akun berhasil disimpan");
     }
 
@@ -126,6 +127,7 @@ class UserController extends Controller
                     }
                 }
                 $data = $this->repo->photo($this->userId, $namafoto);
+                $data->foto = $this->aprUrlFile($data->foto, config('image.user'));
                 return $this->successResponse($data, "Foto berhasil disimpan");
             } else {
                 throw new HttpException(500, "foto gagal diupload");

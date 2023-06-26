@@ -40,4 +40,11 @@ trait ApiResponser {
         return $this->failResponse($message, 422);
     }
 
+    public function aprUrlFile($data, $path = '') {
+        if($data == null || $data == '') {
+            return '';
+        }
+        return $path.$data;
+    }
+
 }

@@ -32,6 +32,9 @@ class TransaksiController extends Controller
         if($data == null) {
             return $this->failRespNotFound('Transaksi tidak ditemukan');
         }
+        foreach($data->fotos as $foto) {
+            $foto->url = $this->aprUrlFile($foto->nama, config('image.transaksi'));
+        }
         return $this->successResponse($data);
     }
 
