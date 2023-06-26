@@ -18,6 +18,9 @@ class TransaksiImplement implements TransaksiRepository {
         if($model != null) {
             $model->kategori;
             $model->rekening;
+            foreach($model->fotos as $foto) {
+                $foto->url = config('image.transaksi').$foto->nama;
+            }
         }
         return $model;
     }

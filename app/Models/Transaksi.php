@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Transaksi extends Model
 {
@@ -18,6 +19,10 @@ class Transaksi extends Model
 
     public function rekening(): BelongsTo {
         return $this->belongsTo(Rekening::class);
+    }
+
+    public function fotos(): HasMany {
+        return $this->hasMany(TransaksiFoto::class);
     }
 
 }

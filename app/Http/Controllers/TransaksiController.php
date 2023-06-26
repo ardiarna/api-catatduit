@@ -4,24 +4,27 @@ namespace App\Http\Controllers;
 
 use App\Repositories\KategoriRepository;
 use App\Repositories\RekeningRepository;
+use App\Repositories\TransaksiFotoRepository;
 use App\Repositories\TransaksiRepository;
 use App\Traits\AFhelper;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class TransaksiController extends Controller
 {
     use ApiResponser, AFhelper;
 
-    protected $user, $parentId, $repo;
+    protected $user, $parentId, $repo, $repoFoto;
 
-    public function __construct(TransaksiRepository $repo) {
+    public function __construct(TransaksiRepository $repo, TransaksiFotoRepository $repoFoto) {
         $this->user = Auth::user();
         if($this->user != null) {
             $this->parentId = $this->user->parent_id != '0' ? $this->user->parent_id : $this->user->id;
         }
         $this->repo = $repo;
+        $this->repoFoto = $repoFoto;
     }
 
     public function findById($id) {
@@ -95,6 +98,18 @@ class TransaksiController extends Controller
         $transaksi = $this->repo->create($inputs);
         $rekeningRepo->editSaldo($transaksi->rekening_id, $sisa_saldo);
         $transaksi->refresh();
+
+        $fotos = $req->file('fotos');
+        if($fotos) {
+            foreach ($fotos as $foto) {
+                if($foto->isValid()) {
+                    $namafoto = $transaksi->id.'_'.$foto->getClientOriginalName();
+                    $foto->move(Storage::path('images/transaksi'), $namafoto);
+                    $this->repoFoto->upsert($namafoto, $transaksi->id);
+                }
+            }
+        }
+
         return $this->createdResponse($transaksi, 'Transaksi berhasil dibuat');
     }
 
@@ -207,6 +222,33 @@ class TransaksiController extends Controller
             $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
         }
         return $this->successResponse($data, 'Transaksi berhasil dihapus');
+    }
+
+    public function addFoto(Request $req, $id) {
+        if($req->hasFile('foto')) {
+            $foto = $req->file('foto');
+            if($foto->isValid()) {
+                $namafoto = $id.'_'.$foto->getClientOriginalName();
+                $foto->move(Storage::path('images/transaksi'), $namafoto);
+                $data = $this->repoFoto->upsert($namafoto, $id);
+                return $this->successResponse($data, 'Foto berhasil disimpan');
+            } else {
+                return $this->failResponse('Foto gagal diupload', 500);
+            }
+        } else {
+            return $this->failRespBadReq('Mohon sertakan file foto');
+        }
+    }
+
+    public function deleteFoto($nama) {
+        $data = $this->repoFoto->delete($nama);
+        if($data == 0) {
+            return $this->failRespNotFound('Foto transaksi tidak ditemukan');
+        }
+        if(Storage::exists('images/transaksi/'.$nama)) {
+            Storage::delete('images/transaksi/'.$nama);
+        }
+        return $this->successResponse($data, 'Foto transaksi berhasil dihapus');
     }
 
 }
