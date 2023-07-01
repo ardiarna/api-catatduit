@@ -51,9 +51,9 @@ class RekeningController extends Controller
             $this->validate($req, [
                 'bank_id' => 'required',
             ]);
+            $inputs['bank_id'] = $req->input('bank_id');
+            $inputs['saldo_endap'] = $req->input('saldo_endap');
         }
-        $inputs['bank_id'] = $req->input('bank_id');
-        $inputs['saldo_endap'] = $req->input('saldo_endap');
         $inputs['keterangan'] = $req->input('keterangan');
         $inputs['parent_id'] = $this->parentId;
         $rekening = $this->repo->create($inputs);
@@ -74,8 +74,8 @@ class RekeningController extends Controller
                 'bank_id' => 'required',
             ]);
         }
-        $inputs['bank_id'] = $req->input('bank_id');
-        $inputs['saldo_endap'] = $req->input('saldo_endap');
+        $inputs['bank_id'] = $req->input('bank_id') == '' ? null : $req->input('bank_id');
+        $inputs['saldo_endap'] = $req->input('saldo_endap') == '' ? null : $req->input('saldo_endap');
         $inputs['keterangan'] = $req->input('keterangan');
         $data = $this->repo->update($id, $inputs);
         return $this->successResponse($data, "Rekening berhasil diubah");

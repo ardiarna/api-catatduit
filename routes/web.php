@@ -21,6 +21,8 @@ $router->post('login', 'AuthController@login');
 $router->post('register', 'UserController@create');
 $router->post('resetpwd', 'UserController@resetPassword');
 
+$router->get('phonecode', 'JsonController@findAll');
+
 $router->group(['middleware' => 'auth:api'], function () use ($router) {
     $router->get('logout', 'AuthController@logout');
     $router->get('refresh', 'AuthController@refresh');
