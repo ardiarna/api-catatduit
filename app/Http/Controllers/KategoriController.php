@@ -7,6 +7,7 @@ use App\Repositories\RekeningRepository;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class KategoriController extends Controller
 {
@@ -23,10 +24,7 @@ class KategoriController extends Controller
     }
 
     public function findById($id) {
-        $data = $this->repo->findById($id);
-        if($data == null) {
-            return $this->failRespNotFound('Kategori tidak ditemukan');
-        }
+        $data = $this->cekOtorisasiData($id);
         return $this->successResponse($data);
     }
 
@@ -59,6 +57,7 @@ class KategoriController extends Controller
     }
 
     public function update(Request $req, RekeningRepository $rekeningRepo, $id) {
+        $this->cekOtorisasiData($id);
         $this->validate($req, [
             'nama' => 'required',
             'ikon' => 'required',
@@ -74,11 +73,23 @@ class KategoriController extends Controller
     }
 
     public function delete($id) {
+        $this->cekOtorisasiData($id);
         $data = $this->repo->delete($id);
         if($data == 0) {
             return $this->failRespNotFound('Kategori tidak ditemukan');
         }
         return $this->successResponse($data, "Kategori berhasil dihapus");
+    }
+
+    public function cekOtorisasiData($id) {
+        $cek = $this->repo->findById($id);
+        if($cek == null) {
+            throw new HttpException(404, 'Kategori tidak ditemukan');
+        }
+        if($cek->parent_id != $this->parentId) {
+            throw new HttpException(403, 'Tidak berwenang untuk melakukan tindakan ini');
+        }
+        return $cek;
     }
 
 }

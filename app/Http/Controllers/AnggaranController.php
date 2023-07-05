@@ -7,6 +7,7 @@ use App\Repositories\KategoriRepository;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class AnggaranController extends Controller
 {
@@ -23,10 +24,7 @@ class AnggaranController extends Controller
     }
 
     public function findById($id) {
-        $data = $this->repo->findById($id);
-        if($data == null) {
-            return $this->failRespNotFound('Anggaran tidak ditemukan');
-        }
+        $data = $this->cekOtorisasiData($id);
         return $this->successResponse($data);
     }
 
@@ -61,6 +59,7 @@ class AnggaranController extends Controller
     }
 
     public function update(Request $req, $id) {
+        $this->cekOtorisasiData($id);
         $this->validate($req, [
             'jumlah' => 'required',
         ]);
@@ -70,11 +69,23 @@ class AnggaranController extends Controller
     }
 
     public function delete($id) {
+        $this->cekOtorisasiData($id);
         $data = $this->repo->delete($id);
         if($data == 0) {
             return $this->failRespNotFound('Anggaran tidak ditemukan');
         }
         return $this->successResponse($data, 'Anggaran berhasil dihapus');
+    }
+
+    public function cekOtorisasiData($id) {
+        $cek = $this->repo->findById($id);
+        if($cek == null) {
+            throw new HttpException(404, 'Anggaran tidak ditemukan');
+        }
+        if($cek->parent_id != $this->parentId) {
+            throw new HttpException(403, 'Tidak berwenang untuk melakukan tindakan ini');
+        }
+        return $cek;
     }
 
 }

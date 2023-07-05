@@ -7,6 +7,7 @@ use App\Repositories\RekeningRepository;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class RekeningController extends Controller
 {
@@ -24,10 +25,7 @@ class RekeningController extends Controller
     }
 
     public function findById($id) {
-        $data = $this->repo->findById($id);
-        if($data == null) {
-            return $this->failRespNotFound('Rekening tidak ditemukan');
-        }
+        $data = $this->cekOtorisasiData($id);
         return $this->successResponse($data);
     }
 
@@ -64,6 +62,7 @@ class RekeningController extends Controller
     }
 
     public function update(Request $req, $id) {
+        $this->cekOtorisasiData($id);
         $this->validate($req, [
             'jenis' => 'required',
             'nama' => 'required',
@@ -86,7 +85,7 @@ class RekeningController extends Controller
             'saldo' => 'required',
         ]);
         $saldo = intval($req->input('saldo'));
-        $lama = $this->repo->findById($id);
+        $lama = $this->cekOtorisasiData($id);
         $rekening = $this->repo->editSaldo($id, $saldo);
         if($rekening != null) {
             $jumlah = intval($lama->saldo) - $saldo;
@@ -97,6 +96,7 @@ class RekeningController extends Controller
     }
 
     public function delete($id) {
+        $this->cekOtorisasiData($id);
         $data = $this->repo->delete($id);
         if($data == 0) {
             return $this->failRespNotFound('Rekening tidak ditemukan');
@@ -114,6 +114,17 @@ class RekeningController extends Controller
             'rekening_id' => $rekening_id,
             'parent_id' => $parent_id
         ]);
+    }
+
+    public function cekOtorisasiData($id) {
+        $cek = $this->repo->findById($id);
+        if($cek == null) {
+            throw new HttpException(404, 'Rekening tidak ditemukan');
+        }
+        if($cek->parent_id != $this->parentId) {
+            throw new HttpException(403, 'Tidak berwenang untuk melakukan tindakan ini');
+        }
+        return $cek;
     }
 
 }

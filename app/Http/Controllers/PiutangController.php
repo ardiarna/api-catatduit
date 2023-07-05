@@ -8,6 +8,7 @@ use App\Repositories\PiutangDetilRepository;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class PiutangController extends Controller
 {
@@ -25,10 +26,7 @@ class PiutangController extends Controller
     }
 
     public function findById($id) {
-        $data = $this->repo->findById($id);
-        if($data == null) {
-            return $this->failRespNotFound('Piutang tidak ditemukan');
-        }
+        $data = $this->cekOtorisasiData($id);
         return $this->successResponse($data);
     }
 
@@ -78,6 +76,7 @@ class PiutangController extends Controller
     }
 
     public function update(Request $req, $id) {
+        $this->cekOtorisasiData($id);
         $this->validate($req, [
             'nama' => 'required',
             'tanggal' => 'required',
@@ -90,10 +89,7 @@ class PiutangController extends Controller
     }
 
     public function delete($id) {
-        $piutangBefore = $this->repo->findById($id);
-        if($piutangBefore == null) {
-            return $this->failRespNotFound('Piutang tidak ditemukan');
-        }
+        $piutangBefore = $this->cekOtorisasiData($id);
         $sisa_piutang = $piutangBefore->jumlah - $piutangBefore->bayar;
         if($sisa_piutang > 0) {
             return $this->failRespUnProcess("Piutang $piutangBefore->nama tidak bisa dihapus, masih terdapat piutang sebesar Rp. ".number_format($sisa_piutang));
@@ -111,6 +107,7 @@ class PiutangController extends Controller
         if($data == null) {
             return $this->failRespNotFound('Detil piutang tidak ditemukan');
         }
+        $this->cekOtorisasiData($data->piutang_id);
         return $this->successResponse($data);
     }
 
@@ -124,10 +121,7 @@ class PiutangController extends Controller
         ]);
         $inputs = $req->only(['nama', 'tanggal', 'isbayar', 'jumlah', 'rekening_id']);
         $inputs['piutang_id'] = $id;
-        $piutang = $this->repo->findById($id);
-        if($piutang == null) {
-            return $this->failRespNotFound('Piutang tidak ditemukan');
-        }
+        $piutang = $this->cekOtorisasiData($id);
         $rekening = $rekeningRepo->findById($inputs['rekening_id']);
         if($rekening == null) {
             return $this->failRespNotFound('Rekening tidak ditemukan');
@@ -169,10 +163,7 @@ class PiutangController extends Controller
         if($piutangDetilBefore == null) {
             return $this->failRespNotFound('Detil piutang tidak ditemukan');
         }
-        $piutang = $piutangDetilBefore->piutang;
-        if($piutang == null) {
-            return $this->failRespNotFound('Piutang tidak ditemukan');
-        }
+        $piutang = $this->cekOtorisasiData($piutangDetilBefore->piutang_id);
         $rekening = $rekeningRepo->findById($inputs['rekening_id']);
         if($rekening == null) {
             return $this->failRespNotFound('Rekening tidak ditemukan');
@@ -234,7 +225,7 @@ class PiutangController extends Controller
         if($piutangDetilBefore == null) {
             return $this->failRespNotFound('Detil piutang tidak ditemukan');
         }
-        $piutang = $piutangDetilBefore->piutang;
+        $piutang = $this->cekOtorisasiData($piutangDetilBefore->piutang_id);
         if($piutang != null) {
             if($piutangDetilBefore->isbayar == 'N') {
                 if(($piutang->jumlah - $piutangDetilBefore->jumlah) < $piutang->bayar) {
@@ -268,6 +259,17 @@ class PiutangController extends Controller
             $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
         }
         return $this->createdResponse($data, 'Detil piutang berhasil dihapus');
+    }
+
+    public function cekOtorisasiData($id) {
+        $cek = $this->repo->findById($id);
+        if($cek == null) {
+            throw new HttpException(404, 'Piutang tidak ditemukan');
+        }
+        if($cek->parent_id != $this->parentId) {
+            throw new HttpException(403, 'Tidak berwenang untuk melakukan tindakan ini');
+        }
+        return $cek;
     }
 
 }

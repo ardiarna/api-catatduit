@@ -11,6 +11,7 @@ use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class TransaksiController extends Controller
 {
@@ -28,10 +29,7 @@ class TransaksiController extends Controller
     }
 
     public function findById($id) {
-        $data = $this->repo->findById($id);
-        if($data == null) {
-            return $this->failRespNotFound('Transaksi tidak ditemukan');
-        }
+        $data = $this->cekOtorisasiData($id);
         foreach($data->fotos as $foto) {
             $foto->url = $this->aprUrlFile($foto->nama, config('image.transaksi'));
         }
@@ -125,10 +123,7 @@ class TransaksiController extends Controller
             'rekening_id' => 'required',
         ]);
         $inputs = $req->only(['nama', 'tanggal', 'jumlah', 'kategori_id', 'rekening_id']);
-        $transaksiBefore = $this->repo->findById($id);
-        if($transaksiBefore == null) {
-            return $this->failRespNotFound('Transaksi tidak ditemukan');
-        }
+        $transaksiBefore = $this->cekOtorisasiData($id);
         $this->afSetYearMonth($transaksiBefore->tanggal);
         $transaksiBefore->year = $this->afYear;
         $transaksiBefore->month = $this->afMonth;
@@ -202,10 +197,7 @@ class TransaksiController extends Controller
     }
 
     public function delete(RekeningRepository $rekeningRepo, $id) {
-        $transaksiBefore = $this->repo->findById($id);
-        if($transaksiBefore == null) {
-            return $this->failRespNotFound('Transaksi tidak ditemukan');
-        }
+        $transaksiBefore = $this->cekOtorisasiData($id);
         $rekening = $rekeningRepo->findById($transaksiBefore->rekening_id);
         if($rekening != null) {
             if($transaksiBefore->iskeluar == 'Y') {
@@ -228,6 +220,7 @@ class TransaksiController extends Controller
     }
 
     public function addFoto(Request $req, $id) {
+        $this->cekOtorisasiData($id);
         if($req->hasFile('foto')) {
             $foto = $req->file('foto');
             if($foto->isValid()) {
@@ -252,6 +245,17 @@ class TransaksiController extends Controller
             Storage::delete('images/transaksi/'.$nama);
         }
         return $this->successResponse($data, 'Foto transaksi berhasil dihapus');
+    }
+
+    public function cekOtorisasiData($id) {
+        $cek = $this->repo->findById($id);
+        if($cek == null) {
+            throw new HttpException(404, 'Transaksi tidak ditemukan');
+        }
+        if($cek->parent_id != $this->parentId) {
+            throw new HttpException(403, 'Tidak berwenang untuk melakukan tindakan ini');
+        }
+        return $cek;
     }
 
 }

@@ -8,6 +8,7 @@ use App\Repositories\PinjamanDetilRepository;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class PinjamanController extends Controller
 {
@@ -25,7 +26,7 @@ class PinjamanController extends Controller
     }
 
     public function findById($id) {
-        $data = $this->repo->findById($id);
+        $data = $this->cekOtorisasiData($id);
         if($data == null) {
             return $this->failRespNotFound('Pinjaman tidak ditemukan');
         }
@@ -78,6 +79,7 @@ class PinjamanController extends Controller
     }
 
     public function update(Request $req, $id) {
+        $this->cekOtorisasiData($id);
         $this->validate($req, [
             'nama' => 'required',
             'tanggal' => 'required',
@@ -90,7 +92,7 @@ class PinjamanController extends Controller
     }
 
     public function delete($id) {
-        $pinjamanBefore = $this->repo->findById($id);
+        $pinjamanBefore = $this->cekOtorisasiData($id);
         if($pinjamanBefore == null) {
             return $this->failRespNotFound('Pinjaman tidak ditemukan');
         }
@@ -111,6 +113,7 @@ class PinjamanController extends Controller
         if($data == null) {
             return $this->failRespNotFound('Detil pinjaman tidak ditemukan');
         }
+        $this->cekOtorisasiData($data->pinjaman_id);
         return $this->successResponse($data);
     }
 
@@ -124,7 +127,7 @@ class PinjamanController extends Controller
         ]);
         $inputs = $req->only(['nama', 'tanggal', 'isbayar', 'jumlah', 'rekening_id']);
         $inputs['pinjaman_id'] = $id;
-        $pinjaman = $this->repo->findById($id);
+        $pinjaman = $this->cekOtorisasiData($id);
         if($pinjaman == null) {
             return $this->failRespNotFound('Pinjaman tidak ditemukan');
         }
@@ -169,7 +172,7 @@ class PinjamanController extends Controller
         if($pinjamanDetilBefore == null) {
             return $this->failRespNotFound('Detil pinjaman tidak ditemukan');
         }
-        $pinjaman = $pinjamanDetilBefore->pinjaman;
+        $pinjaman = $this->cekOtorisasiData($pinjamanDetilBefore->pinjaman_id);
         if($pinjaman == null) {
             return $this->failRespNotFound('Pinjaman tidak ditemukan');
         }
@@ -234,7 +237,7 @@ class PinjamanController extends Controller
         if($pinjamanDetilBefore == null) {
             return $this->failRespNotFound('Detil pinjaman tidak ditemukan');
         }
-        $pinjaman = $pinjamanDetilBefore->pinjaman;
+        $pinjaman = $this->cekOtorisasiData($pinjamanDetilBefore->pinjaman_id);
         if($pinjaman != null) {
             if($pinjamanDetilBefore->isbayar == 'N') {
                 if(($pinjaman->jumlah - $pinjamanDetilBefore->jumlah) < $pinjaman->bayar) {
@@ -268,6 +271,17 @@ class PinjamanController extends Controller
             $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
         }
         return $this->createdResponse($data, 'Detil pinjaman berhasil dihapus');
+    }
+
+    public function cekOtorisasiData($id) {
+        $cek = $this->repo->findById($id);
+        if($cek == null) {
+            throw new HttpException(404, 'Pinjaman tidak ditemukan');
+        }
+        if($cek->parent_id != $this->parentId) {
+            throw new HttpException(403, 'Tidak berwenang untuk melakukan tindakan ini');
+        }
+        return $cek;
     }
 
 }

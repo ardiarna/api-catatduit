@@ -7,6 +7,7 @@ use App\Repositories\TransferRepository;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class TransferController extends Controller
 {
@@ -23,10 +24,7 @@ class TransferController extends Controller
     }
 
     public function findById($id) {
-        $data = $this->repo->findById($id);
-        if($data == null) {
-            return $this->failRespNotFound('Transfer tidak ditemukan');
-        }
+        $data = $this->cekOtorisasiData($id);
         return $this->successResponse($data);
     }
 
@@ -87,10 +85,7 @@ class TransferController extends Controller
         ]);
         $inputs = $req->only(['tanggal', 'jumlah', 'rekasal_id', 'rektuju_id']);
         $inputs['nama'] = $req->input('nama');
-        $transferBefore = $this->repo->findById($id);
-        if($transferBefore == null) {
-            return $this->failRespNotFound('Transfer tidak ditemukan');
-        }
+        $transferBefore = $this->cekOtorisasiData($id);
         $rekasal = $rekeningRepo->findById($inputs['rekasal_id']);
         if($rekasal == null) {
             return $this->failRespNotFound('Rekening asal tidak ditemukan');
@@ -142,10 +137,7 @@ class TransferController extends Controller
     }
 
     public function delete(RekeningRepository $rekeningRepo, $id) {
-        $transferBefore = $this->repo->findById($id);
-        if($transferBefore == null) {
-            return $this->failRespNotFound('Transfer tidak ditemukan');
-        }
+        $transferBefore = $this->cekOtorisasiData($id);
         $rekasal = $rekeningRepo->findById($transferBefore->rekasal_id);
         if($rekasal != null) {
             $rekasal_sisa = $rekasal->saldo + $transferBefore->jumlah;
@@ -168,6 +160,17 @@ class TransferController extends Controller
             $rekeningRepo->editSaldo($rektuju->id, $rektuju_sisa);
         }
         return $this->successResponse($data, 'Transfer berhasil dihapus');
+    }
+
+    public function cekOtorisasiData($id) {
+        $cek = $this->repo->findById($id);
+        if($cek == null) {
+            throw new HttpException(404, 'Transfer tidak ditemukan');
+        }
+        if($cek->parent_id != $this->parentId) {
+            throw new HttpException(403, 'Tidak berwenang untuk melakukan tindakan ini');
+        }
+        return $cek;
     }
 
 }
