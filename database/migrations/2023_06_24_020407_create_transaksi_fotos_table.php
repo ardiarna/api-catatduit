@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('transaksi_fotos', function (Blueprint $table) {
             $table->string('nama', 767)->primary();
-            $table->foreignId('transaksi_id');
+            $table->foreignId('transaksi_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
             $table->timestamps();
         });
     }

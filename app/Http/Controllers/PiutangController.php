@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Repositories\RekeningRepository;
+use App\Repositories\TransaksiRepository;
 use App\Repositories\PiutangRepository;
 use App\Repositories\PiutangDetilRepository;
 use App\Traits\ApiResponser;
@@ -40,7 +41,7 @@ class PiutangController extends Controller
         return $this->successResponse($datas);
     }
 
-    public function create(Request $req, RekeningRepository $rekeningRepo) {
+    public function create(Request $req, RekeningRepository $rekeningRepo, TransaksiRepository $transaksiRepo) {
         $this->validate($req, [
             'nama' => 'required',
             'tanggal' => 'required',
@@ -62,7 +63,7 @@ class PiutangController extends Controller
             return $this->failRespUnProcess("Saldo $rekening->nama tidak cukup [sisa saldo : Rp. ".number_format($rekening->saldo)."]");
         }
         $piutang = $this->repo->create($inputs);
-        $this->repoDetil->create([
+        $piutangDetil = $this->repoDetil->create([
             'nama' => 'Piutang Awal',
             'tanggal' => $inputs['tanggal'],
             'isbayar' => 'N',
@@ -70,7 +71,17 @@ class PiutangController extends Controller
             'piutang_id' => $piutang->id,
             'rekening_id' => $rekening->id
         ]);
+        $transaksi = $transaksiRepo->create([
+            'nama' => "$piutang->nama - $piutangDetil->nama",
+            'tanggal' => $piutangDetil->tanggal,
+            'iskeluar' => 'Y',
+            'jumlah' => $piutangDetil->jumlah,
+            'kategori_id' => '3',
+            'rekening_id' => $piutangDetil->rekening_id,
+            'parent_id' => $piutang->parent_id
+        ]);
         $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
+        $this->repoDetil->updateTransaksiId($piutangDetil->id, $transaksi->id);
         $piutang->refresh();
         return $this->createdResponse($piutang, 'Piutang berhasil dibuat');
     }
@@ -111,7 +122,7 @@ class PiutangController extends Controller
         return $this->successResponse($data);
     }
 
-    public function createDetil(Request $req, RekeningRepository $rekeningRepo, $id) {
+    public function createDetil(Request $req, RekeningRepository $rekeningRepo, TransaksiRepository $transaksiRepo, $id) {
         $this->validate($req, [
             'tanggal' => 'required',
             'isbayar' => 'required',
@@ -146,12 +157,22 @@ class PiutangController extends Controller
         } else {
             $this->repo->editJumlah($piutang->id, ($piutang->jumlah + $jumlah));
         }
+        $transaksi = $transaksiRepo->create([
+            'nama' => "$piutang->nama - $piutangDetil->nama",
+            'tanggal' => $piutangDetil->tanggal,
+            'iskeluar' => $piutangDetil->isbayar == 'Y'? 'N' : 'Y',
+            'jumlah' => $piutangDetil->jumlah,
+            'kategori_id' => $piutangDetil->isbayar == 'Y'? '4' : '3',
+            'rekening_id' => $piutangDetil->rekening_id,
+            'parent_id' => $piutang->parent_id
+        ]);
         $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
+        $this->repoDetil->updateTransaksiId($piutangDetil->id, $transaksi->id);
         $piutangDetil->refresh();
         return $this->createdResponse($piutangDetil, 'Detil piutang berhasil disimpan');
     }
 
-    public function updateDetil(Request $req, RekeningRepository $rekeningRepo, $id) {
+    public function updateDetil(Request $req, RekeningRepository $rekeningRepo, TransaksiRepository $transaksiRepo, $id) {
         $this->validate($req, [
             'tanggal' => 'required',
             'jumlah' => 'required',
@@ -210,6 +231,12 @@ class PiutangController extends Controller
         } else {
             $this->repo->editJumlah($piutang->id, ($piutang->jumlah - $piutangDetilBefore->jumlah) + $jumlah);
         }
+        $transaksiRepo->update($piutangDetil->transaksi_id, [
+            'nama' => "$piutang->nama - $piutangDetil->nama",
+            'tanggal' => $piutangDetil->tanggal,
+            'jumlah' => $piutangDetil->jumlah,
+            'rekening_id' => $piutangDetil->rekening_id
+        ]);
         $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
         if($rekening->id != $piutangDetilBefore->rekening_id) {
             if($rekeningBefore != null) {
@@ -220,17 +247,15 @@ class PiutangController extends Controller
         return $this->createdResponse($piutangDetil, 'Detil piutang berhasil disimpan');
     }
 
-    public function deleteDetil(RekeningRepository $rekeningRepo, $id) {
+    public function deleteDetil(RekeningRepository $rekeningRepo, TransaksiRepository $transaksiRepo, $id) {
         $piutangDetilBefore = $this->repoDetil->findById($id);
         if($piutangDetilBefore == null) {
             return $this->failRespNotFound('Detil piutang tidak ditemukan');
         }
         $piutang = $this->cekOtorisasiData($piutangDetilBefore->piutang_id);
-        if($piutang != null) {
-            if($piutangDetilBefore->isbayar == 'N') {
-                if(($piutang->jumlah - $piutangDetilBefore->jumlah) < $piutang->bayar) {
-                    return $this->failRespUnProcess("Tidak bisa dihapus, jumlah piutang akan lebih kecil dari jumlah bayar.");
-                }
+        if($piutangDetilBefore->isbayar == 'N') {
+            if(($piutang->jumlah - $piutangDetilBefore->jumlah) < $piutang->bayar) {
+                return $this->failRespUnProcess("Tidak bisa dihapus, jumlah piutang akan lebih kecil dari jumlah bayar.");
             }
         }
         $rekening = $piutangDetilBefore->rekening;
@@ -248,13 +273,12 @@ class PiutangController extends Controller
         if($data == 0) {
             return $this->failRespNotFound('Detil piutang tidak ditemukan');
         }
-        if($piutang != null) {
-            if($piutangDetilBefore->isbayar == 'Y') {
-                $this->repo->editBayar($piutang->id, ($piutang->bayar - $piutangDetilBefore->jumlah));
-            } else {
-                $this->repo->editJumlah($piutang->id, ($piutang->jumlah - $piutangDetilBefore->jumlah));
-            }
+        if($piutangDetilBefore->isbayar == 'Y') {
+            $this->repo->editBayar($piutang->id, ($piutang->bayar - $piutangDetilBefore->jumlah));
+        } else {
+            $this->repo->editJumlah($piutang->id, ($piutang->jumlah - $piutangDetilBefore->jumlah));
         }
+        $transaksiRepo->delete($piutangDetilBefore->transaksi_id);
         if($rekening != null) {
             $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
         }

@@ -17,8 +17,9 @@ return new class extends Migration
             $table->timestamp('tanggal')->nullable();
             $table->enum('isbayar', ['Y', 'N']);
             $table->integer('jumlah', false, true);
-            $table->foreignId('piutang_id');
-            $table->foreignId('rekening_id');
+            $table->foreignId('piutang_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('rekening_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('transaksi_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
             $table->timestamps();
         });
     }

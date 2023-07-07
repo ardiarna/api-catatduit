@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Repositories\RekeningRepository;
+use App\Repositories\TransaksiRepository;
 use App\Repositories\PinjamanRepository;
 use App\Repositories\PinjamanDetilRepository;
 use App\Traits\ApiResponser;
@@ -27,9 +28,6 @@ class PinjamanController extends Controller
 
     public function findById($id) {
         $data = $this->cekOtorisasiData($id);
-        if($data == null) {
-            return $this->failRespNotFound('Pinjaman tidak ditemukan');
-        }
         return $this->successResponse($data);
     }
 
@@ -43,7 +41,7 @@ class PinjamanController extends Controller
         return $this->successResponse($datas);
     }
 
-    public function create(Request $req, RekeningRepository $rekeningRepo) {
+    public function create(Request $req, RekeningRepository $rekeningRepo, TransaksiRepository $transaksiRepo) {
         $this->validate($req, [
             'nama' => 'required',
             'tanggal' => 'required',
@@ -65,7 +63,7 @@ class PinjamanController extends Controller
             return $this->failRespUnProcess("Saldo $rekening->nama tidak cukup [sisa saldo : Rp. ".number_format($rekening->saldo)."]");
         }
         $pinjaman = $this->repo->create($inputs);
-        $this->repoDetil->create([
+        $pinjamanDetil = $this->repoDetil->create([
             'nama' => 'Pinjaman Awal',
             'tanggal' => $inputs['tanggal'],
             'isbayar' => 'N',
@@ -73,7 +71,17 @@ class PinjamanController extends Controller
             'pinjaman_id' => $pinjaman->id,
             'rekening_id' => $rekening->id
         ]);
+        $transaksi = $transaksiRepo->create([
+            'nama' => "$pinjaman->nama - $pinjamanDetil->nama",
+            'tanggal' => $pinjamanDetil->tanggal,
+            'iskeluar' => 'N',
+            'jumlah' => $pinjamanDetil->jumlah,
+            'kategori_id' => '5',
+            'rekening_id' => $pinjamanDetil->rekening_id,
+            'parent_id' => $pinjaman->parent_id
+        ]);
         $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
+        $this->repoDetil->updateTransaksiId($pinjamanDetil->id, $transaksi->id);
         $pinjaman->refresh();
         return $this->createdResponse($pinjaman, 'Pinjaman berhasil dibuat');
     }
@@ -93,9 +101,6 @@ class PinjamanController extends Controller
 
     public function delete($id) {
         $pinjamanBefore = $this->cekOtorisasiData($id);
-        if($pinjamanBefore == null) {
-            return $this->failRespNotFound('Pinjaman tidak ditemukan');
-        }
         $sisa_pinjaman = $pinjamanBefore->jumlah - $pinjamanBefore->bayar;
         if($sisa_pinjaman > 0) {
             return $this->failRespUnProcess("Pinjaman $pinjamanBefore->nama tidak bisa dihapus, masih terdapat pinjaman sebesar Rp. ".number_format($sisa_pinjaman));
@@ -117,7 +122,7 @@ class PinjamanController extends Controller
         return $this->successResponse($data);
     }
 
-    public function createDetil(Request $req, RekeningRepository $rekeningRepo, $id) {
+    public function createDetil(Request $req, RekeningRepository $rekeningRepo, TransaksiRepository $transaksiRepo, $id) {
         $this->validate($req, [
             'tanggal' => 'required',
             'isbayar' => 'required',
@@ -128,9 +133,6 @@ class PinjamanController extends Controller
         $inputs = $req->only(['nama', 'tanggal', 'isbayar', 'jumlah', 'rekening_id']);
         $inputs['pinjaman_id'] = $id;
         $pinjaman = $this->cekOtorisasiData($id);
-        if($pinjaman == null) {
-            return $this->failRespNotFound('Pinjaman tidak ditemukan');
-        }
         $rekening = $rekeningRepo->findById($inputs['rekening_id']);
         if($rekening == null) {
             return $this->failRespNotFound('Rekening tidak ditemukan');
@@ -155,12 +157,22 @@ class PinjamanController extends Controller
         } else {
             $this->repo->editJumlah($pinjaman->id, ($pinjaman->jumlah + $jumlah));
         }
+        $transaksi = $transaksiRepo->create([
+            'nama' => "$pinjaman->nama - $pinjamanDetil->nama",
+            'tanggal' => $pinjamanDetil->tanggal,
+            'iskeluar' => $pinjamanDetil->isbayar,
+            'jumlah' => $pinjamanDetil->jumlah,
+            'kategori_id' => $pinjamanDetil->isbayar == 'Y'? '6' : '5',
+            'rekening_id' => $pinjamanDetil->rekening_id,
+            'parent_id' => $pinjaman->parent_id
+        ]);
         $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
+        $this->repoDetil->updateTransaksiId($pinjamanDetil->id, $transaksi->id);
         $pinjamanDetil->refresh();
         return $this->createdResponse($pinjamanDetil, 'Detil pinjaman berhasil disimpan');
     }
 
-    public function updateDetil(Request $req, RekeningRepository $rekeningRepo, $id) {
+    public function updateDetil(Request $req, RekeningRepository $rekeningRepo, TransaksiRepository $transaksiRepo, $id) {
         $this->validate($req, [
             'tanggal' => 'required',
             'jumlah' => 'required',
@@ -173,9 +185,6 @@ class PinjamanController extends Controller
             return $this->failRespNotFound('Detil pinjaman tidak ditemukan');
         }
         $pinjaman = $this->cekOtorisasiData($pinjamanDetilBefore->pinjaman_id);
-        if($pinjaman == null) {
-            return $this->failRespNotFound('Pinjaman tidak ditemukan');
-        }
         $rekening = $rekeningRepo->findById($inputs['rekening_id']);
         if($rekening == null) {
             return $this->failRespNotFound('Rekening tidak ditemukan');
@@ -222,6 +231,12 @@ class PinjamanController extends Controller
         } else {
             $this->repo->editJumlah($pinjaman->id, ($pinjaman->jumlah - $pinjamanDetilBefore->jumlah) + $jumlah);
         }
+        $transaksiRepo->update($pinjamanDetil->transaksi_id, [
+            'nama' => "$pinjaman->nama - $pinjamanDetil->nama",
+            'tanggal' => $pinjamanDetil->tanggal,
+            'jumlah' => $pinjamanDetil->jumlah,
+            'rekening_id' => $pinjamanDetil->rekening_id
+        ]);
         $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
         if($rekening->id != $pinjamanDetilBefore->rekening_id) {
             if($rekeningBefore != null) {
@@ -232,17 +247,15 @@ class PinjamanController extends Controller
         return $this->createdResponse($pinjamanDetil, 'Detil pinjaman berhasil disimpan');
     }
 
-    public function deleteDetil(RekeningRepository $rekeningRepo, $id) {
+    public function deleteDetil(RekeningRepository $rekeningRepo, TransaksiRepository $transaksiRepo, $id) {
         $pinjamanDetilBefore = $this->repoDetil->findById($id);
         if($pinjamanDetilBefore == null) {
             return $this->failRespNotFound('Detil pinjaman tidak ditemukan');
         }
         $pinjaman = $this->cekOtorisasiData($pinjamanDetilBefore->pinjaman_id);
-        if($pinjaman != null) {
-            if($pinjamanDetilBefore->isbayar == 'N') {
-                if(($pinjaman->jumlah - $pinjamanDetilBefore->jumlah) < $pinjaman->bayar) {
-                    return $this->failRespUnProcess("Tidak bisa dihapus, jumlah pinjaman akan lebih kecil dari jumlah bayar.");
-                }
+        if($pinjamanDetilBefore->isbayar == 'N') {
+            if(($pinjaman->jumlah - $pinjamanDetilBefore->jumlah) < $pinjaman->bayar) {
+                return $this->failRespUnProcess("Tidak bisa dihapus, jumlah pinjaman akan lebih kecil dari jumlah bayar.");
             }
         }
         $rekening = $pinjamanDetilBefore->rekening;
@@ -260,13 +273,12 @@ class PinjamanController extends Controller
         if($data == 0) {
             return $this->failRespNotFound('Detil pinjaman tidak ditemukan');
         }
-        if($pinjaman != null) {
-            if($pinjamanDetilBefore->isbayar == 'Y') {
-                $this->repo->editBayar($pinjaman->id, ($pinjaman->bayar - $pinjamanDetilBefore->jumlah));
-            } else {
-                $this->repo->editJumlah($pinjaman->id, ($pinjaman->jumlah - $pinjamanDetilBefore->jumlah));
-            }
+        if($pinjamanDetilBefore->isbayar == 'Y') {
+            $this->repo->editBayar($pinjaman->id, ($pinjaman->bayar - $pinjamanDetilBefore->jumlah));
+        } else {
+            $this->repo->editJumlah($pinjaman->id, ($pinjaman->jumlah - $pinjamanDetilBefore->jumlah));
         }
+        $transaksiRepo->delete($pinjamanDetilBefore->transaksi_id);
         if($rekening != null) {
             $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
         }

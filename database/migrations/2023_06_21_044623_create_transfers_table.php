@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('nama', 2048)->nullable();
             $table->timestamp('tanggal')->nullable();
             $table->integer('jumlah', false, true);
-            $table->foreignId('rekasal_id');
-            $table->foreignId('rektuju_id');
+            $table->foreignId('rekasal_id')->constrained('rekenings')->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('rektuju_id')->constrained('rekenings')->cascadeOnUpdate()->restrictOnDelete();
             $table->foreignId('parent_id');
             $table->timestamps();
         });

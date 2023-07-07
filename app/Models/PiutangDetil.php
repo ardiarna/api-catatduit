@@ -9,7 +9,7 @@ class PiutangDetil extends Model
 {
 
     protected $fillable = [
-        'nama', 'tanggal', 'isbayar', 'jumlah', 'piutang_id', 'rekening_id'
+        'nama', 'tanggal', 'isbayar', 'jumlah', 'piutang_id', 'rekening_id', 'transaksi_id'
     ];
 
     public function piutang(): BelongsTo {

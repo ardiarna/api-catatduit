@@ -16,7 +16,7 @@ return new class extends Migration
             $table->enum('jenis', ['K', 'D', 'C', 'M', 'W']);
             $table->string('nama');
             $table->integer('saldo', false, true);
-            $table->foreignId('bank_id')->nullable();
+            $table->foreignId('bank_id')->nullable()->constrained()->cascadeOnUpdate()->restrictOnDelete();
             $table->integer('saldo_endap', false, true)->nullable();
             $table->string('keterangan', 2048)->nullable();
             $table->foreignId('parent_id');

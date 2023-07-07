@@ -9,7 +9,7 @@ class PinjamanDetil extends Model
 {
 
     protected $fillable = [
-        'nama', 'tanggal', 'isbayar', 'jumlah', 'pinjaman_id', 'rekening_id'
+        'nama', 'tanggal', 'isbayar', 'jumlah', 'pinjaman_id', 'rekening_id', 'transaksi_id'
     ];
 
     public function pinjaman(): BelongsTo {

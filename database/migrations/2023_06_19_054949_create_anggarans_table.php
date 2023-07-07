@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->smallInteger('tahun');
             $table->smallInteger('bulan');
-            $table->foreignId('kategori_id');
+            $table->foreignId('kategori_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
             $table->integer('jumlah', false, true);
             $table->foreignId('parent_id');
             $table->timestamps();

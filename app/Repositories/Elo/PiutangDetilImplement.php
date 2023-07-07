@@ -66,6 +66,15 @@ class PiutangDetilImplement implements PiutangDetilRepository {
         return $model;
     }
 
+    public function updateTransaksiId($id, $transaksi_id) {
+        $model = $this->model->findOrFail($id);
+        $model->transaksi_id = $transaksi_id;
+        $model->save();
+        $model->pinjaman;
+        $model->rekening;
+        return $model;
+    }
+
     public function delete($id) {
         return $this->model->destroy($id);
     }

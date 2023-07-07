@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Repositories\AdjustRepository;
 use App\Repositories\RekeningRepository;
+use App\Repositories\TransaksiRepository;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,15 +13,15 @@ class RekeningController extends Controller
 {
     use ApiResponser;
 
-    protected $user, $parentId, $repo, $adjustRepo;
+    protected $user, $parentId, $repo, $transaksiRepo;
 
-    public function __construct(RekeningRepository $repo, AdjustRepository $adjustRepo) {
+    public function __construct(RekeningRepository $repo, TransaksiRepository $transaksiRepo) {
         $this->user = Auth::user();
         if($this->user != null) {
             $this->parentId = $this->user->parent_id != '0' ? $this->user->parent_id : $this->user->id;
         }
         $this->repo = $repo;
-        $this->adjustRepo = $adjustRepo;
+        $this->transaksiRepo = $transaksiRepo;
     }
 
     public function findById($id) {
@@ -56,7 +56,7 @@ class RekeningController extends Controller
         $inputs['parent_id'] = $this->parentId;
         $rekening = $this->repo->create($inputs);
         if($rekening != null) {
-            $this->insertAdjustTable('Saldo Awal', 'N', $rekening->saldo, $rekening->id, $rekening->parent_id);
+            $this->insertTransaksiTable('Saldo awal', 'N', $rekening->saldo, '1', $rekening->id, $rekening->parent_id);
         }
         return $this->createdResponse($rekening, 'Rekening berhasil dibuat');
     }
@@ -90,7 +90,7 @@ class RekeningController extends Controller
         if($rekening != null) {
             $jumlah = intval($lama->saldo) - $saldo;
             $iskeluar = $jumlah >= 1 ? "Y" : "N";
-            $this->insertAdjustTable('Penyesuaian', $iskeluar, abs($jumlah), $rekening->id, $rekening->parent_id);
+            $this->insertTransaksiTable('Penyesuaian saldo', $iskeluar, abs($jumlah), '2', $rekening->id, $rekening->parent_id);
         }
         return $this->successResponse($rekening, "Saldo berhasil diubah");
     }
@@ -101,16 +101,16 @@ class RekeningController extends Controller
         if($data == 0) {
             return $this->failRespNotFound('Rekening tidak ditemukan');
         }
-        $this->adjustRepo->deleteByRekeningId($id);
         return $this->successResponse($data, "Rekening berhasil dihapus");
     }
 
-    protected function insertAdjustTable($nama, $iskeluar, $jumlah, $rekening_id, $parent_id) {
-        $this->adjustRepo->create([
+    protected function insertTransaksiTable($nama, $iskeluar, $jumlah, $kategori_id,  $rekening_id, $parent_id) {
+        $this->transaksiRepo->create([
             'nama' => $nama,
             'tanggal' => date('Y-m-d H:i:s'),
             'iskeluar' => $iskeluar,
             'jumlah' => $jumlah,
+            'kategori_id' => $kategori_id,
             'rekening_id' => $rekening_id,
             'parent_id' => $parent_id
         ]);

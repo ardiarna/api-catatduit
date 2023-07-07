@@ -17,8 +17,8 @@ return new class extends Migration
             $table->timestamp('tanggal')->nullable();
             $table->enum('iskeluar', ['Y', 'N']);
             $table->integer('jumlah', false, true);
-            $table->foreignId('kategori_id');
-            $table->foreignId('rekening_id');
+            $table->foreignId('kategori_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('rekening_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
             $table->foreignId('parent_id');
             $table->timestamps();
         });
