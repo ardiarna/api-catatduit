@@ -19,7 +19,7 @@ return new class extends Migration
             $table->integer('jumlah', false, true);
             $table->foreignId('pinjaman_id')->constrained('pinjamans')->cascadeOnUpdate()->restrictOnDelete();
             $table->foreignId('rekening_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
-            $table->foreignId('transaksi_id')->constrained()->cascadeOnUpdate()->restrictOnDelete();
+            $table->foreignId('transaksi_id')->nullable()->constrained()->cascadeOnUpdate()->restrictOnDelete();
             $table->timestamps();
         });
     }
