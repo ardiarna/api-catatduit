@@ -36,7 +36,7 @@ class PiutangController extends Controller
             'parent_id' => $this->parentId,
             'nama' => $req->query('nama'),
             'keterangan' => $req->query('keterangan'),
-            'direction' => $req->query('direction', 'asc'),
+            'direction' => $req->query('direction', 'desc'),
         ]);
         return $this->successResponse($datas);
     }
@@ -105,11 +105,11 @@ class PiutangController extends Controller
         if($sisa_piutang > 0) {
             return $this->failRespUnProcess("Piutang $piutangBefore->nama tidak bisa dihapus, masih terdapat piutang sebesar Rp. ".number_format($sisa_piutang));
         }
+        $detils = $this->repoDetil->deletesByPiutangId($id);
         $data = $this->repo->delete($id);
         if($data == 0) {
             return $this->failRespNotFound('Piutang tidak ditemukan');
         }
-        $detils = $this->repoDetil->deletesByPiutangId($id);
         return $this->successResponse([$data, $detils], 'Piutang berhasil dihapus');
     }
 
@@ -235,6 +235,7 @@ class PiutangController extends Controller
             'nama' => "$piutang->nama - $piutangDetil->nama",
             'tanggal' => $piutangDetil->tanggal,
             'jumlah' => $piutangDetil->jumlah,
+            'kategori_id' => $piutangDetil->isbayar == 'Y'? '4' : '3',
             'rekening_id' => $piutangDetil->rekening_id
         ]);
         $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);

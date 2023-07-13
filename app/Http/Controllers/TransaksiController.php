@@ -227,6 +227,7 @@ class TransaksiController extends Controller
                 $namafoto = $id.'_'.$foto->getClientOriginalName();
                 $foto->move(Storage::path('images/transaksi'), $namafoto);
                 $data = $this->repoFoto->upsert($namafoto, $id);
+                $data->url = $this->aprUrlFile($data->nama, config('image.transaksi'));
                 return $this->successResponse($data, 'Foto berhasil disimpan');
             } else {
                 return $this->failResponse('Foto gagal diupload', 500);

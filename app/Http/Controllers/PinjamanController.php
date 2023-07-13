@@ -36,7 +36,7 @@ class PinjamanController extends Controller
             'parent_id' => $this->parentId,
             'nama' => $req->query('nama'),
             'keterangan' => $req->query('keterangan'),
-            'direction' => $req->query('direction', 'asc'),
+            'direction' => $req->query('direction', 'desc'),
         ]);
         return $this->successResponse($datas);
     }
@@ -105,11 +105,11 @@ class PinjamanController extends Controller
         if($sisa_pinjaman > 0) {
             return $this->failRespUnProcess("Pinjaman $pinjamanBefore->nama tidak bisa dihapus, masih terdapat pinjaman sebesar Rp. ".number_format($sisa_pinjaman));
         }
+        $detils = $this->repoDetil->deletesByPinjamanId($id);
         $data = $this->repo->delete($id);
         if($data == 0) {
             return $this->failRespNotFound('Pinjaman tidak ditemukan');
         }
-        $detils = $this->repoDetil->deletesByPinjamanId($id);
         return $this->successResponse([$data, $detils], 'Pinjaman berhasil dihapus');
     }
 
@@ -235,6 +235,7 @@ class PinjamanController extends Controller
             'nama' => "$pinjaman->nama - $pinjamanDetil->nama",
             'tanggal' => $pinjamanDetil->tanggal,
             'jumlah' => $pinjamanDetil->jumlah,
+            'kategori_id' => $pinjamanDetil->isbayar == 'Y'? '6' : '5',
             'rekening_id' => $pinjamanDetil->rekening_id
         ]);
         $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
