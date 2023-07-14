@@ -31,11 +31,14 @@ class TransaksiImplement implements TransaksiRepository {
         $kategori_id = $inputs['kategori_id'];
         $rekening_id = $inputs['rekening_id'];
         $nama = $inputs['nama'];
+        $isall = $inputs['isall'];
         $direction = $inputs['direction'];
 
         $models = $this->model->where('parent_id', $parent_id)
-            ->where('tanggal', '>=', $tgl_awal)
-            ->where('tanggal', '<=', $tgl_akhir);
+            ->whereBetween('tanggal', [$tgl_awal, $tgl_akhir]);
+        if($isall != 'Y') {
+            $models = $models->whereNotIn('kategori_id', [3, 4, 5, 6]);
+        }
         if($iskeluar) {
             $models = $models->where('iskeluar', $iskeluar);
         }
@@ -78,6 +81,23 @@ class TransaksiImplement implements TransaksiRepository {
 
     public function delete($id) {
         return $this->model->destroy($id);
+    }
+
+    public function summaryPeriode($parent_id, $tahun, $bulan) {
+        $model = $this->model
+            ->selectRaw('SUM(CASE WHEN iskeluar = ? THEN jumlah ELSE 0 END) AS total_masuk', ['N'])
+            ->selectRaw('SUM(CASE WHEN iskeluar = ? THEN jumlah ELSE 0 END) AS total_keluar', ['Y'])
+            ->selectRaw('SUM(CASE WHEN kategori_id = 3 THEN jumlah ELSE 0 END) AS tambah_piutang')
+            ->selectRaw('SUM(CASE WHEN kategori_id = 4 THEN jumlah ELSE 0 END) AS bayar_piutang')
+            ->selectRaw('SUM(CASE WHEN kategori_id = 5 THEN jumlah ELSE 0 END) AS tambah_pinjaman')
+            ->selectRaw('SUM(CASE WHEN kategori_id = 6 THEN jumlah ELSE 0 END) AS bayar_pinjaman')
+            ->selectRaw('SUM(CASE WHEN kategori_id NOT IN (3, 4, 5, 6) AND iskeluar = ? THEN jumlah ELSE 0 END) AS transaksi_masuk', ['N'])
+            ->selectRaw('SUM(CASE WHEN kategori_id NOT IN (3, 4, 5, 6) AND iskeluar = ? THEN jumlah ELSE 0 END) AS transaksi_keluar', ['Y'])
+            ->where('parent_id', $parent_id)
+            ->whereRaw('YEAR(tanggal) = ?', [$tahun])
+            ->whereRaw('MONTH(tanggal) = ?', [$bulan])
+            ->first();
+        return $model;
     }
 
 }

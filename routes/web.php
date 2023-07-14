@@ -51,6 +51,7 @@ $router->group(['prefix' => 'bank', 'middleware' => 'auth:api'], function () use
 $router->group(['prefix' => 'rekening', 'middleware' => 'auth:api'], function () use ($router) {
     $router->get('/', 'RekeningController@findAll');
     $router->get('{id}', 'RekeningController@findById');
+    $router->get('view/saldo', 'RekeningController@getTotalSaldo');
     $router->post('/', 'RekeningController@create');
     $router->put('{id}', 'RekeningController@update');
     $router->put('{id}/adjust', 'RekeningController@adjust');
@@ -82,6 +83,7 @@ $router->group(['prefix' => 'anggaran', 'middleware' => 'auth:api'], function ()
 $router->group(['prefix' => 'transaksi', 'middleware' => 'auth:api'], function () use ($router) {
     $router->get('/', 'TransaksiController@findAll');
     $router->get('{id}', 'TransaksiController@findById');
+    $router->get('view/summary', 'TransaksiController@summaryPeriode');
     $router->post('/', 'TransaksiController@create');
     $router->put('{id}', 'TransaksiController@update');
     $router->post('{id}/photo', 'TransaksiController@addFoto');

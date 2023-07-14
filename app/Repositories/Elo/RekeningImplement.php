@@ -75,4 +75,8 @@ class RekeningImplement implements RekeningRepository {
         return $this->model->destroy($id);
     }
 
+    public function getTotalSaldo($parent_id) {
+        return $this->model->where('parent_id', $parent_id)->sum('saldo');;
+    }
+
 }

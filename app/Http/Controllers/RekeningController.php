@@ -127,4 +127,9 @@ class RekeningController extends Controller
         return $cek;
     }
 
+    public function getTotalSaldo() {
+        $data = $this->repo->getTotalSaldo($this->parentId);
+        return $this->successResponse(['saldo' => $data]);
+    }
+
 }

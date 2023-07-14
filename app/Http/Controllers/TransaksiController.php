@@ -49,6 +49,7 @@ class TransaksiController extends Controller
             'kategori_id' => $req->query('kategori_id'),
             'rekening_id' => $req->query('rekening_id'),
             'nama' => $req->query('nama'),
+            'isall' => $req->query('isall', 'N'),
             'direction' => $req->query('direction', 'desc'),
         ]);
         return $this->successResponse($datas);
@@ -257,6 +258,15 @@ class TransaksiController extends Controller
             throw new HttpException(403, 'Tidak berwenang untuk melakukan tindakan ini');
         }
         return $cek;
+    }
+
+    public function summaryPeriode(Request $req) {
+        $this->validate($req, [
+            'tahun' => 'required',
+            'bulan' => 'required',
+        ]);
+        $datas = $this->repo->summaryPeriode($this->parentId, $req->query('tahun'), $req->query('bulan'));
+        return $this->successResponse($datas);
     }
 
 }

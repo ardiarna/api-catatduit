@@ -9,4 +9,5 @@ interface RekeningRepository {
     public function update($id, array $inputs);
     public function editSaldo($id, $saldo);
     public function delete($id);
+    public function getTotalSaldo($parent_id);
 }
