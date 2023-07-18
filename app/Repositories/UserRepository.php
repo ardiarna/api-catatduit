@@ -11,6 +11,7 @@ interface UserRepository {
     public function update($id, array $inputs);
     public function editPassword($id, string $password);
     public function tokenPush($id, string $token_push);
+    public function getTokenPushOthers($myid, $parent_id);
     public function photo($id, string $namafoto);
     public function delete($id);
 }

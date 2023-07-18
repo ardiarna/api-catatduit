@@ -6,6 +6,8 @@ use App\Repositories\RekeningRepository;
 use App\Repositories\TransaksiRepository;
 use App\Repositories\PinjamanRepository;
 use App\Repositories\PinjamanDetilRepository;
+use App\Repositories\UserRepository;
+use App\Traits\AFhelper;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,17 +15,18 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class PinjamanController extends Controller
 {
-    use ApiResponser;
+    use ApiResponser, AFhelper;
 
-    protected $user, $parentId, $repo, $repoDetil;
+    protected $user, $parentId, $repo, $repoDetil, $userRepo;
 
-    public function __construct(PinjamanRepository $repo, PinjamanDetilRepository $repoDetil) {
+    public function __construct(PinjamanRepository $repo, PinjamanDetilRepository $repoDetil, UserRepository $userRepo) {
         $this->user = Auth::user();
         if($this->user != null) {
             $this->parentId = $this->user->parent_id != '0' ? $this->user->parent_id : $this->user->id;
         }
         $this->repo = $repo;
         $this->repoDetil = $repoDetil;
+        $this->userRepo = $userRepo;
     }
 
     public function findById($id) {
@@ -83,6 +86,7 @@ class PinjamanController extends Controller
         $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
         $this->repoDetil->updateTransaksiId($pinjamanDetil->id, $transaksi->id);
         $pinjaman->refresh();
+        $this->sendFCM('menambah', $pinjamanDetil);
         return $this->createdResponse($pinjaman, 'Pinjaman berhasil dibuat');
     }
 
@@ -169,6 +173,7 @@ class PinjamanController extends Controller
         $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
         $this->repoDetil->updateTransaksiId($pinjamanDetil->id, $transaksi->id);
         $pinjamanDetil->refresh();
+        $this->sendFCM('menambah', $pinjamanDetil);
         return $this->createdResponse($pinjamanDetil, 'Detil pinjaman berhasil disimpan');
     }
 
@@ -245,6 +250,7 @@ class PinjamanController extends Controller
             }
         }
         $pinjamanDetil->refresh();
+        $this->sendFCM('mengubah', $pinjamanDetil);
         return $this->createdResponse($pinjamanDetil, 'Detil pinjaman berhasil disimpan');
     }
 
@@ -283,6 +289,7 @@ class PinjamanController extends Controller
         if($rekening != null) {
             $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
         }
+        $this->sendFCM('menghapus', $pinjamanDetilBefore);
         return $this->createdResponse($data, 'Detil pinjaman berhasil dihapus');
     }
 
@@ -295,6 +302,15 @@ class PinjamanController extends Controller
             throw new HttpException(403, 'Tidak berwenang untuk melakukan tindakan ini');
         }
         return $cek;
+    }
+
+    public function sendFCM(string $title, $model) {
+        $token = $this->userRepo->getTokenPushOthers($this->user->id, $this->parentId);
+        $this->afSendFCMessaging($token,
+            $this->user->nama.' '.$title.' pinjaman'.($model->isbayar == 'Y' ? ' (bayar)' : ''),
+            $model->pinjaman->nama.' '.$model->nama.' '.$this->matCurrency($model->jumlah).' -; '.$model->rekening->nama.' '.$this->matDMYtime($model->tanggal),
+            'pinjaman', $model->pinjaman->id
+        );
     }
 
 }

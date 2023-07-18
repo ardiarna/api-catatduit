@@ -6,6 +6,8 @@ use App\Repositories\RekeningRepository;
 use App\Repositories\TransaksiRepository;
 use App\Repositories\PiutangRepository;
 use App\Repositories\PiutangDetilRepository;
+use App\Repositories\UserRepository;
+use App\Traits\AFhelper;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,17 +15,18 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class PiutangController extends Controller
 {
-    use ApiResponser;
+    use ApiResponser, AFhelper;
 
-    protected $user, $parentId, $repo, $repoDetil;
+    protected $user, $parentId, $repo, $repoDetil, $userRepo;
 
-    public function __construct(PiutangRepository $repo, PiutangDetilRepository $repoDetil) {
+    public function __construct(PiutangRepository $repo, PiutangDetilRepository $repoDetil, UserRepository $userRepo) {
         $this->user = Auth::user();
         if($this->user != null) {
             $this->parentId = $this->user->parent_id != '0' ? $this->user->parent_id : $this->user->id;
         }
         $this->repo = $repo;
         $this->repoDetil = $repoDetil;
+        $this->userRepo = $userRepo;
     }
 
     public function findById($id) {
@@ -83,6 +86,7 @@ class PiutangController extends Controller
         $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
         $this->repoDetil->updateTransaksiId($piutangDetil->id, $transaksi->id);
         $piutang->refresh();
+        $this->sendFCM('menambah', $piutangDetil);
         return $this->createdResponse($piutang, 'Piutang berhasil dibuat');
     }
 
@@ -169,6 +173,7 @@ class PiutangController extends Controller
         $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
         $this->repoDetil->updateTransaksiId($piutangDetil->id, $transaksi->id);
         $piutangDetil->refresh();
+        $this->sendFCM('menambah', $piutangDetil);
         return $this->createdResponse($piutangDetil, 'Detil piutang berhasil disimpan');
     }
 
@@ -245,6 +250,7 @@ class PiutangController extends Controller
             }
         }
         $piutangDetil->refresh();
+        $this->sendFCM('mengubah', $piutangDetil);
         return $this->createdResponse($piutangDetil, 'Detil piutang berhasil disimpan');
     }
 
@@ -283,6 +289,7 @@ class PiutangController extends Controller
         if($rekening != null) {
             $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
         }
+        $this->sendFCM('menghapus', $piutangDetilBefore);
         return $this->createdResponse($data, 'Detil piutang berhasil dihapus');
     }
 
@@ -295,6 +302,15 @@ class PiutangController extends Controller
             throw new HttpException(403, 'Tidak berwenang untuk melakukan tindakan ini');
         }
         return $cek;
+    }
+
+    public function sendFCM(string $title, $model) {
+        $token = $this->userRepo->getTokenPushOthers($this->user->id, $this->parentId);
+        $this->afSendFCMessaging($token,
+            $this->user->nama.' '.$title.' piutang'.($model->isbayar == 'Y' ? ' (bayar)' : ''),
+            $model->piutang->nama.' '.$model->nama.' '.$this->matCurrency($model->jumlah).' -; '.$model->rekening->nama.' '.$this->matDMYtime($model->tanggal),
+            'piutang', $model->piutang->id
+        );
     }
 
 }

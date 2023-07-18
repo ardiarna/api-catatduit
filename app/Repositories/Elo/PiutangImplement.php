@@ -16,10 +16,11 @@ class PiutangImplement implements PiutangRepository {
     public function findById($id) {
         $model = $this->model->find($id);
         if($model != null) {
-            $model->detils;
-            foreach($model->detils as $detil) {
+            $detils = $this->model->find($id)->detils()->orderBy('tanggal')->get();
+            foreach($detils as $detil) {
                 $detil->rekening;
             }
+            $model->detils = $detils;
         }
         return $model;
     }

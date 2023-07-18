@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Repositories\AnggaranRepository;
 use App\Repositories\KategoriRepository;
+use App\Repositories\UserRepository;
+use App\Traits\AFhelper;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,16 +13,17 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class AnggaranController extends Controller
 {
-    use ApiResponser;
+    use ApiResponser, AFhelper;
 
-    protected $user, $parentId, $repo;
+    protected $user, $parentId, $repo, $userRepo;
 
-    public function __construct(AnggaranRepository $repo) {
+    public function __construct(AnggaranRepository $repo, UserRepository $userRepo) {
         $this->user = Auth::user();
         if($this->user != null) {
             $this->parentId = $this->user->parent_id != '0' ? $this->user->parent_id : $this->user->id;
         }
         $this->repo = $repo;
+        $this->userRepo = $userRepo;
     }
 
     public function findById($id) {
@@ -55,6 +58,7 @@ class AnggaranController extends Controller
             return $this->failRespBadReq('Kategori harus jenis pengeluaran');
         }
         $data = $this->repo->create($inputs);
+        $this->sendFCM($data);
         return $this->createdResponse($data, 'Anggaran berhasil dibuat');
     }
 
@@ -65,6 +69,7 @@ class AnggaranController extends Controller
         ]);
         $jumlah = $req->input('jumlah');
         $data = $this->repo->update($id, $jumlah);
+        $this->sendFCM($data);
         return $this->successResponse($data, 'Anggaran berhasil diubah');
     }
 
@@ -86,6 +91,15 @@ class AnggaranController extends Controller
             throw new HttpException(403, 'Tidak berwenang untuk melakukan tindakan ini');
         }
         return $cek;
+    }
+
+    public function sendFCM($model) {
+        $token = $this->userRepo->getTokenPushOthers($this->user->id, $this->parentId);
+        $this->afSendFCMessaging($token,
+            $this->user->nama.' mengubah anggaran',
+            $model->kategori->nama.' periode '.$this->arr_month[$model->bulan].' '.$model->tahun.' '.$this->matCurrency($model->jumlah),
+            'anggaran', $model->id
+        );
     }
 
 }

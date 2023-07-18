@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Repositories\RekeningRepository;
 use App\Repositories\TransferRepository;
+use App\Repositories\UserRepository;
+use App\Traits\AFhelper;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,16 +13,17 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class TransferController extends Controller
 {
-    use ApiResponser;
+    use ApiResponser, AFhelper;
 
-    protected $user, $parentId, $repo;
+    protected $user, $parentId, $repo, $userRepo;
 
-    public function __construct(TransferRepository $repo) {
+    public function __construct(TransferRepository $repo, UserRepository $userRepo) {
         $this->user = Auth::user();
         if($this->user != null) {
             $this->parentId = $this->user->parent_id != '0' ? $this->user->parent_id : $this->user->id;
         }
         $this->repo = $repo;
+        $this->userRepo = $userRepo;
     }
 
     public function findById($id) {
@@ -73,6 +76,7 @@ class TransferController extends Controller
         $rekeningRepo->editSaldo($rekasal->id, $rekasal_sisa);
         $rekeningRepo->editSaldo($rektuju->id, $rektuju_sisa);
         $transfer->refresh();
+        $this->sendFCM('menambah', $transfer);
         return $this->createdResponse($transfer, 'Transfer berhasil dibuat');
     }
 
@@ -133,6 +137,7 @@ class TransferController extends Controller
             }
         }
         $transfer->refresh();
+        $this->sendFCM('mengubah', $transfer);
         return $this->successResponse($transfer, 'Transfer berhasil diubah');
     }
 
@@ -159,6 +164,7 @@ class TransferController extends Controller
         if($rektuju != null) {
             $rekeningRepo->editSaldo($rektuju->id, $rektuju_sisa);
         }
+        $this->sendFCM('menghapus', $transferBefore);
         return $this->successResponse($data, 'Transfer berhasil dihapus');
     }
 
@@ -171,6 +177,15 @@ class TransferController extends Controller
             throw new HttpException(403, 'Tidak berwenang untuk melakukan tindakan ini');
         }
         return $cek;
+    }
+
+    public function sendFCM(string $title, $model) {
+        $token = $this->userRepo->getTokenPushOthers($this->user->id, $this->parentId);
+        $this->afSendFCMessaging($token,
+            $this->user->nama.' '.$title.' transfer',
+            'Dari '.$model->rekasal->nama.' ke '.$model->rektuju->nama.' '.$this->matCurrency($model->jumlah).' -; '.$this->matDMYtime($model->tanggal),
+            'transfer', $model->id
+        );
     }
 
 }

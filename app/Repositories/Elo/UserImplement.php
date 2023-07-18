@@ -67,4 +67,20 @@ class UserImplement implements UserRepository {
     public function delete($id) {
         return $this->model->destroy($id);
     }
+
+    public function getTokenPushOthers($myid, $parent_id) {
+        $tokens = $this->model->select('token_push')
+            ->where(function ($query) use ($parent_id) {
+                $query->where('parent_id', $parent_id)
+                    ->orWhere('id', $parent_id);
+            })
+            ->where('id', '<>', $myid)
+            ->get();
+        $hasil = [];
+        foreach ($tokens as $token) {
+            array_push($hasil, $token->token_push);
+        }
+        return $hasil;
+    }
+
 }

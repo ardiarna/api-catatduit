@@ -6,6 +6,7 @@ use App\Repositories\KategoriRepository;
 use App\Repositories\RekeningRepository;
 use App\Repositories\TransaksiFotoRepository;
 use App\Repositories\TransaksiRepository;
+use App\Repositories\UserRepository;
 use App\Traits\AFhelper;
 use App\Traits\ApiResponser;
 use Illuminate\Http\Request;
@@ -17,15 +18,16 @@ class TransaksiController extends Controller
 {
     use ApiResponser, AFhelper;
 
-    protected $user, $parentId, $repo, $repoFoto;
+    protected $user, $parentId, $repo, $repoFoto, $userRepo;
 
-    public function __construct(TransaksiRepository $repo, TransaksiFotoRepository $repoFoto) {
+    public function __construct(TransaksiRepository $repo, TransaksiFotoRepository $repoFoto, UserRepository $userRepo) {
         $this->user = Auth::user();
         if($this->user != null) {
             $this->parentId = $this->user->parent_id != '0' ? $this->user->parent_id : $this->user->id;
         }
         $this->repo = $repo;
         $this->repoFoto = $repoFoto;
+        $this->userRepo = $userRepo;
     }
 
     public function findById($id) {
@@ -111,7 +113,7 @@ class TransaksiController extends Controller
                 }
             }
         }
-
+        $this->sendFCM('menambah', $transaksi);
         return $this->createdResponse($transaksi, 'Transaksi berhasil dibuat');
     }
 
@@ -194,6 +196,7 @@ class TransaksiController extends Controller
             }
         }
         $transaksi->refresh();
+        $this->sendFCM('mengubah', $transaksi);
         return $this->successResponse($transaksi, 'Transaksi berhasil diubah');
     }
 
@@ -217,6 +220,7 @@ class TransaksiController extends Controller
         if($rekening != null) {
             $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
         }
+        $this->sendFCM('menghapus', $transaksiBefore);
         return $this->successResponse($data, 'Transaksi berhasil dihapus');
     }
 
@@ -267,6 +271,15 @@ class TransaksiController extends Controller
         ]);
         $datas = $this->repo->summaryPeriode($this->parentId, $req->query('tahun'), $req->query('bulan'));
         return $this->successResponse($datas);
+    }
+
+    public function sendFCM(string $title, $model) {
+        $token = $this->userRepo->getTokenPushOthers($this->user->id, $this->parentId);
+        $this->afSendFCMessaging($token,
+            $this->user->nama.' '.$title.' transaksi',
+            $model->nama.' '.$this->matCurrency($model->jumlah).' -; '.$model->kategori->nama.' '.$this->matDMYtime($model->tanggal),
+            'transaksi', $model->id
+        );
     }
 
 }
