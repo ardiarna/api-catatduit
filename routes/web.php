@@ -122,3 +122,17 @@ $router->group(['prefix' => 'pinjaman', 'middleware' => 'auth:api'], function ()
     $router->delete('{id}', 'PinjamanController@delete');
     $router->delete('{id}/detil', 'PinjamanController@deleteDetil');
 });
+
+$router->group(['prefix' => 'ceklist', 'middleware' => 'auth:api'], function () use ($router) {
+    $router->get('/', 'CeklistController@findAll');
+    $router->get('{id}', 'CeklistController@findById');
+    $router->get('{id}/detil', 'CeklistController@findDetilById');
+    $router->post('/', 'CeklistController@create');
+    $router->post('{id}', 'CeklistController@createDetil');
+    $router->put('{id}', 'CeklistController@update');
+    $router->put('{id}/detil', 'CeklistController@updateDetil');
+    $router->put('{id}/isceklist', 'CeklistController@updateIsceklist');
+    $router->put('{id}/isaktif', 'CeklistController@updateIsaktif');
+    $router->delete('{id}', 'CeklistController@delete');
+    $router->delete('{id}/detil', 'CeklistController@deleteDetil');
+});

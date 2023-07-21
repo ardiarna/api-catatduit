@@ -70,7 +70,7 @@ class PiutangDetilImplement implements PiutangDetilRepository {
         $model = $this->model->findOrFail($id);
         $model->transaksi_id = $transaksi_id;
         $model->save();
-        $model->pinjaman;
+        $model->piutang;
         $model->rekening;
         return $model;
     }
