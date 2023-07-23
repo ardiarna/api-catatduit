@@ -83,6 +83,7 @@ $router->group(['prefix' => 'anggaran', 'middleware' => 'auth:api'], function ()
 $router->group(['prefix' => 'transaksi', 'middleware' => 'auth:api'], function () use ($router) {
     $router->get('/', 'TransaksiController@findAll');
     $router->get('{id}', 'TransaksiController@findById');
+    $router->get('view/periode', 'TransaksiController@findByPeriode');
     $router->get('view/summary', 'TransaksiController@summaryPeriode');
     $router->post('/', 'TransaksiController@create');
     $router->put('{id}', 'TransaksiController@update');

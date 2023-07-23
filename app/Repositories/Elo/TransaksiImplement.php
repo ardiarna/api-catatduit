@@ -59,6 +59,30 @@ class TransaksiImplement implements TransaksiRepository {
         return $models;
     }
 
+    public function findByPeriode(array $inputs) {
+        $parent_id = $inputs['parent_id'];
+        $tahun = $inputs['tahun'];
+        $bulan = $inputs['bulan'];
+        $kategori_id = $inputs['kategori_id'];
+        $rekening_id = $inputs['rekening_id'];
+
+        $models = $this->model->where('parent_id', $parent_id)
+            ->whereRaw('YEAR(tanggal) = ?', [$tahun])
+            ->whereRaw('MONTH(tanggal) = ?', [$bulan]);
+        if($kategori_id) {
+            $models = $models->where('kategori_id', $kategori_id);
+        }
+        if($rekening_id) {
+            $models = $models->where('rekening_id', $rekening_id);
+        }
+        $models = $models->orderBy('tanggal', 'desc')->get();
+        foreach ($models as $model) {
+            $model->kategori;
+            $model->rekening;
+        }
+        return $models;
+    }
+
     public function create(array $inputs) {
         $model = $this->model->create($inputs);
         $model->kategori;

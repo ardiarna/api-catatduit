@@ -57,6 +57,21 @@ class TransaksiController extends Controller
         return $this->successResponse($datas);
     }
 
+    public function findByPeriode(Request $req) {
+        $this->validate($req, [
+            'tahun' => 'required',
+            'bulan' => 'required',
+        ]);
+        $datas = $this->repo->findByPeriode([
+            'parent_id' => $this->parentId,
+            'tahun' => $req->query('tahun'),
+            'bulan' => $req->query('bulan'),
+            'kategori_id' => $req->query('kategori_id'),
+            'rekening_id' => $req->query('rekening_id'),
+        ]);
+        return $this->successResponse($datas);
+    }
+
     public function create(Request $req, RekeningRepository $rekeningRepo, KategoriRepository $kategoriRepo) {
         $this->validate($req, [
             'nama' => 'required',
