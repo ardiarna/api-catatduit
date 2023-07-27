@@ -100,6 +100,18 @@ $router->group(['prefix' => 'transfer', 'middleware' => 'auth:api'], function ()
     $router->delete('{id}', 'TransferController@delete');
 });
 
+$router->group(['prefix' => 'tabungan', 'middleware' => 'auth:api'], function () use ($router) {
+    $router->get('/', 'TabunganController@findAll');
+    $router->get('{id}', 'TabunganController@findById');
+    $router->get('{id}/detil', 'TabunganController@findDetilById');
+    $router->post('/', 'TabunganController@create');
+    $router->post('{id}', 'TabunganController@createDetil');
+    $router->put('{id}', 'TabunganController@update');
+    $router->put('{id}/detil', 'TabunganController@updateDetil');
+    $router->delete('{id}', 'TabunganController@delete');
+    $router->delete('{id}/detil', 'TabunganController@deleteDetil');
+});
+
 $router->group(['prefix' => 'piutang', 'middleware' => 'auth:api'], function () use ($router) {
     $router->get('/', 'PiutangController@findAll');
     $router->get('{id}', 'PiutangController@findById');
