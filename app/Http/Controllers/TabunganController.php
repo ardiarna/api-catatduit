@@ -79,7 +79,7 @@ class TabunganController extends Controller
             'tanggal' => $tabunganDetil->tanggal,
             'iskeluar' => 'Y',
             'jumlah' => $tabunganDetil->jumlah,
-            'kategori_id' => '3',
+            'kategori_id' => '7',
             'rekening_id' => $tabunganDetil->rekening_id,
             'parent_id' => $tabungan->parent_id
         ]);
@@ -106,7 +106,7 @@ class TabunganController extends Controller
     public function delete($id) {
         $tabunganBefore = $this->cekOtorisasiData($id);
         $sisa_tabungan = $tabunganBefore->jumlah - $tabunganBefore->ambil;
-        if($sisa_tabungan > 0) {
+        if($sisa_tabungan != 0) {
             return $this->failRespUnProcess("Tabungan $tabunganBefore->nama tidak bisa dihapus, masih terdapat tabungan sebesar Rp. ".number_format($sisa_tabungan));
         }
         $detils = $this->repoDetil->deletesByTabunganId($id);
@@ -144,10 +144,6 @@ class TabunganController extends Controller
         $jumlah = intval($inputs['jumlah']);
         $sisa_saldo = 0;
         if($inputs['isambil'] == 'Y') {
-            $sisa_tabungan = $tabungan->jumlah - $tabungan->ambil;
-            if($jumlah > $sisa_tabungan) {
-                return $this->failRespUnProcess("Jumlah ambil tidak boleh melebihi sisa tabungan [Rp. ".number_format($sisa_tabungan)."]");
-            }
             $sisa_saldo = $rekening->saldo + $jumlah;
         } else {
             $sisa_saldo = $rekening->saldo - $jumlah;
@@ -166,7 +162,7 @@ class TabunganController extends Controller
             'tanggal' => $tabunganDetil->tanggal,
             'iskeluar' => $tabunganDetil->isambil == 'Y'? 'N' : 'Y',
             'jumlah' => $tabunganDetil->jumlah,
-            'kategori_id' => $tabunganDetil->isambil == 'Y'? '4' : '3',
+            'kategori_id' => $tabunganDetil->isambil == 'Y'? '8' : '7',
             'rekening_id' => $tabunganDetil->rekening_id,
             'parent_id' => $tabungan->parent_id
         ]);
@@ -197,10 +193,6 @@ class TabunganController extends Controller
         $jumlah = intval($inputs['jumlah']);
         $sisa_saldo = 0;
         if($tabunganDetilBefore->isambil == 'Y') {
-            $sisa_tabungan = ($tabungan->jumlah - $tabungan->ambil) + $tabunganDetilBefore->jumlah;
-            if($jumlah > $sisa_tabungan) {
-                return $this->failRespUnProcess("Jumlah ambil tidak boleh melebihi sisa tabungan [Rp. ".number_format($sisa_tabungan)."]");
-            }
             $sisa_saldo = $rekening->id == $tabunganDetilBefore->rekening_id
                 ? ($rekening->saldo - $tabunganDetilBefore->jumlah) + $jumlah
                 : $rekening->saldo + $jumlah;
@@ -240,7 +232,7 @@ class TabunganController extends Controller
             'nama' => "$tabungan->nama - $tabunganDetil->nama",
             'tanggal' => $tabunganDetil->tanggal,
             'jumlah' => $tabunganDetil->jumlah,
-            'kategori_id' => $tabunganDetil->isambil == 'Y'? '4' : '3',
+            'kategori_id' => $tabunganDetil->isambil == 'Y'? '8' : '7',
             'rekening_id' => $tabunganDetil->rekening_id
         ]);
         $rekeningRepo->editSaldo($rekening->id, $sisa_saldo);
